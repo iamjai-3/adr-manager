@@ -74,7 +74,7 @@ async function buildAll() {
   console.log("building vercel serverless bundle...");
   await mkdir("api", { recursive: true });
   await esbuild({
-    entryPoints: ["api/server.ts"],
+    entryPoints: ["server/vercel-handler.ts"],
     platform: "node",
     bundle: true,
     format: "esm",
