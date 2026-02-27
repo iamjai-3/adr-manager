@@ -93,7 +93,6 @@ const frontendAdrs = [
 export async function seedDatabase() {
   const existingUsers = await db.select().from(users).limit(1);
   if (existingUsers.length > 0) {
-    console.log("Database already has users, skipping seed...");
     return;
   }
 

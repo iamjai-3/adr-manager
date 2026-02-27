@@ -65,22 +65,27 @@ export function log(message: string, source = "express") {
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
-  let capturedJsonResponse: Record<string, unknown> | undefined = undefined;
+  let errorMessage: string | undefined;
 
   const originalResJson = res.json;
   res.json = function (bodyJson, ...args) {
-    capturedJsonResponse = bodyJson as Record<string, unknown>;
+    // Only capture the error message from failed responses — never user data
+    if (res.statusCode >= 400 && bodyJson && typeof bodyJson === "object") {
+      errorMessage = (bodyJson as Record<string, unknown>).message as string | undefined;
+    }
     return originalResJson.apply(res, [bodyJson, ...args]);
   };
 
   res.on("finish", () => {
     const duration = Date.now() - start;
     if (path.startsWith("/api")) {
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+      const status = res.statusCode;
+      const logLine = `${req.method} ${path} ${status} in ${duration}ms${errorMessage ? ` :: ${errorMessage}` : ""}`;
+      if (status >= 400) {
+        logger.error(logLine);
+      } else {
+        logger.info(logLine);
       }
-      log(logLine);
     }
   });
 
