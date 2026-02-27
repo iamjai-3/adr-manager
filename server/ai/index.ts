@@ -1,4 +1,7 @@
 import type { AIProvider, ProviderName } from "./types";
+import { OpenAIProvider } from "./providers/openai";
+import { AnthropicProvider } from "./providers/anthropic";
+import { GoogleProvider } from "./providers/google";
 
 let _provider: AIProvider | null = null;
 
@@ -8,17 +11,14 @@ export function getAIProvider(): AIProvider {
   const name = (process.env.AI_PROVIDER || "openai") as ProviderName;
 
   if (name === "anthropic") {
-    const { AnthropicProvider } = require("./providers/anthropic");
     _provider = new AnthropicProvider();
   } else if (name === "google") {
-    const { GoogleProvider } = require("./providers/google");
     _provider = new GoogleProvider();
   } else {
-    const { OpenAIProvider } = require("./providers/openai");
     _provider = new OpenAIProvider();
   }
 
-  return _provider!;
+  return _provider;
 }
 
 export function isAIConfigured(): boolean {
