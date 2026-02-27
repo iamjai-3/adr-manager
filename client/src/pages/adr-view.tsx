@@ -251,26 +251,26 @@ export default function AdrView() {
         <div className="space-y-10">
 
           <Section num="1" title="Context">
-            <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground/90">{adr.context}</p>
+            <div className="prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: adr.context }} />
           </Section>
 
           <Separator />
 
           <Section num="2" title="Decision">
-            <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground/90">{adr.decision}</p>
+            <div className="prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: adr.decision }} />
           </Section>
 
           <Separator />
 
           <Section num="3" title="Consequences">
-            <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground/90">{adr.consequences}</p>
+            <div className="prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: adr.consequences }} />
           </Section>
 
           {adr.alternatives && (
             <>
               <Separator />
               <Section num="4" title="Alternatives Considered">
-                <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground/90">{adr.alternatives}</p>
+                <div className="prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: adr.alternatives ?? "" }} />
               </Section>
             </>
           )}

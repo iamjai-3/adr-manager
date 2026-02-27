@@ -6,8 +6,8 @@ import { z } from "zod";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { RichTextEditor } from "@/components/rich-text-editor";
 import {
   Form,
   FormControl,
@@ -159,11 +159,11 @@ export default function AdrCreate() {
                   <FormItem>
                     <FormLabel>Context</FormLabel>
                     <FormControl>
-                      <Textarea
+                      <RichTextEditor
+                        value={field.value ?? ""}
+                        onChange={field.onChange}
                         placeholder="Why is this decision needed? What problem are we solving?"
-                        className="min-h-[100px]"
-                        {...field}
-                        data-testid="input-context"
+                        minHeight="120px"
                       />
                     </FormControl>
                     <FormMessage />
@@ -178,11 +178,11 @@ export default function AdrCreate() {
                   <FormItem>
                     <FormLabel>Decision</FormLabel>
                     <FormControl>
-                      <Textarea
+                      <RichTextEditor
+                        value={field.value ?? ""}
+                        onChange={field.onChange}
                         placeholder="What was decided and why?"
-                        className="min-h-[100px]"
-                        {...field}
-                        data-testid="input-decision"
+                        minHeight="120px"
                       />
                     </FormControl>
                     <FormMessage />
@@ -197,11 +197,11 @@ export default function AdrCreate() {
                   <FormItem>
                     <FormLabel>Consequences</FormLabel>
                     <FormControl>
-                      <Textarea
+                      <RichTextEditor
+                        value={field.value ?? ""}
+                        onChange={field.onChange}
                         placeholder="What are the outcomes and trade-offs?"
-                        className="min-h-[80px]"
-                        {...field}
-                        data-testid="input-consequences"
+                        minHeight="100px"
                       />
                     </FormControl>
                     <FormMessage />
@@ -216,11 +216,11 @@ export default function AdrCreate() {
                   <FormItem>
                     <FormLabel>Alternatives Considered (optional)</FormLabel>
                     <FormControl>
-                      <Textarea
+                      <RichTextEditor
+                        value={field.value ?? ""}
+                        onChange={field.onChange}
                         placeholder="What other options were evaluated?"
-                        className="min-h-[80px]"
-                        {...field}
-                        data-testid="input-alternatives"
+                        minHeight="100px"
                       />
                     </FormControl>
                     <FormMessage />

@@ -6,8 +6,8 @@ import { z } from "zod";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { RichTextEditor } from "@/components/rich-text-editor";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Form,
@@ -196,7 +196,12 @@ export default function AdrEdit() {
                   <FormItem>
                     <FormLabel>Context</FormLabel>
                     <FormControl>
-                      <Textarea className="min-h-[100px]" {...field} data-testid="input-context" />
+                      <RichTextEditor
+                        value={field.value ?? ""}
+                        onChange={field.onChange}
+                        placeholder="Why is this decision needed? What problem are we solving?"
+                        minHeight="120px"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -210,7 +215,12 @@ export default function AdrEdit() {
                   <FormItem>
                     <FormLabel>Decision</FormLabel>
                     <FormControl>
-                      <Textarea className="min-h-[100px]" {...field} data-testid="input-decision" />
+                      <RichTextEditor
+                        value={field.value ?? ""}
+                        onChange={field.onChange}
+                        placeholder="What was decided and why?"
+                        minHeight="120px"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -224,7 +234,12 @@ export default function AdrEdit() {
                   <FormItem>
                     <FormLabel>Consequences</FormLabel>
                     <FormControl>
-                      <Textarea className="min-h-[80px]" {...field} data-testid="input-consequences" />
+                      <RichTextEditor
+                        value={field.value ?? ""}
+                        onChange={field.onChange}
+                        placeholder="What are the outcomes and trade-offs?"
+                        minHeight="100px"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -238,7 +253,12 @@ export default function AdrEdit() {
                   <FormItem>
                     <FormLabel>Alternatives (optional)</FormLabel>
                     <FormControl>
-                      <Textarea className="min-h-[80px]" {...field} data-testid="input-alternatives" />
+                      <RichTextEditor
+                        value={field.value ?? ""}
+                        onChange={field.onChange}
+                        placeholder="What other options were evaluated?"
+                        minHeight="100px"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

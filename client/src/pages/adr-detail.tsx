@@ -281,9 +281,11 @@ export default function AdrDetail() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm leading-relaxed whitespace-pre-wrap" data-testid="text-context">
-              {adr.context}
-            </p>
+            <div
+              className="prose prose-sm dark:prose-invert max-w-none"
+              data-testid="text-context"
+              dangerouslySetInnerHTML={{ __html: adr.context }}
+            />
           </CardContent>
         </Card>
 
@@ -294,9 +296,11 @@ export default function AdrDetail() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm leading-relaxed whitespace-pre-wrap" data-testid="text-decision">
-              {adr.decision}
-            </p>
+            <div
+              className="prose prose-sm dark:prose-invert max-w-none"
+              data-testid="text-decision"
+              dangerouslySetInnerHTML={{ __html: adr.decision }}
+            />
           </CardContent>
         </Card>
 
@@ -307,9 +311,11 @@ export default function AdrDetail() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm leading-relaxed whitespace-pre-wrap" data-testid="text-consequences">
-              {adr.consequences}
-            </p>
+            <div
+              className="prose prose-sm dark:prose-invert max-w-none"
+              data-testid="text-consequences"
+              dangerouslySetInnerHTML={{ __html: adr.consequences }}
+            />
           </CardContent>
         </Card>
 
@@ -321,9 +327,11 @@ export default function AdrDetail() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm leading-relaxed whitespace-pre-wrap" data-testid="text-alternatives">
-                {adr.alternatives}
-              </p>
+              <div
+                className="prose prose-sm dark:prose-invert max-w-none"
+                data-testid="text-alternatives"
+                dangerouslySetInnerHTML={{ __html: adr.alternatives }}
+              />
             </CardContent>
           </Card>
         )}
