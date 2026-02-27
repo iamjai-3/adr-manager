@@ -1368,7 +1368,7 @@ Return JSON with keys: context, decision, consequences, alternatives.`;
     }
 
     try {
-      const adr = await storage.getAdr(adrId);
+      const adr = await storage.getAdr(adrId, projectId);
       if (!adr) return res.status(404).json({ message: "ADR not found" });
 
       // Fetch related ADRs and requirements for richer context
