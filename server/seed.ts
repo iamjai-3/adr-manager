@@ -240,8 +240,17 @@ export async function seedDatabase() {
   console.log("  carol/carol123   (viewer, not in any project)");
 }
 
-// Run the seed function only if this file is executed directly (not imported)
-if (import.meta.url === `file://${process.argv[1]}`) {
+// Run the seed function only if this file is executed directly (not imported).
+// The try/catch handles CJS bundles where import.meta is unavailable.
+const isMain = (() => {
+  try {
+    return import.meta.url === `file://${process.argv[1]}`;
+  } catch {
+    return false;
+  }
+})();
+
+if (isMain) {
   seedDatabase()
     .then(() => {
       console.log("✓ Database seeding completed successfully");
