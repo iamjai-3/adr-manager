@@ -12,7 +12,9 @@
     "db:seed": "dotenv -e .env -- tsx server/seed.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.78.0",
     "@excalidraw/excalidraw": "^0.18.0",
+    "@google/generative-ai": "^0.24.1",
     "@hookform/resolvers": "^3.10.0",
     "@jridgewell/trace-mapping": "^0.3.25",
     "@radix-ui/react-accordion": "^1.2.4",
@@ -73,6 +75,7 @@
     "minio": "^8.0.6",
     "multer": "^2.0.2",
     "next-themes": "^0.4.6",
+    "openai": "^6.25.0",
     "passport": "^0.7.0",
     "passport-local": "^1.0.0",
     "pg": "^8.16.3",

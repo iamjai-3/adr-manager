@@ -29,6 +29,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import type { ProjectRequirement, ProjectMemberWithUser } from "@server/storage";
 import { projectRolePermissions } from "@shared/schema";
+import { AISuggestions } from "@/components/ai-suggestions";
 
 const priorityColors = {
   must: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
@@ -180,7 +181,9 @@ export default function ProjectRequirements() {
             </p>
           </div>
         </div>
-        {permissions.canEdit && (
+        <div className="flex items-center gap-2">
+          <AISuggestions projectId={projectId ?? ""} />
+          {permissions.canEdit && (
           <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
             <DialogTrigger asChild>
               <Button data-testid="button-new-requirement">
@@ -274,7 +277,8 @@ export default function ProjectRequirements() {
               </form>
             </DialogContent>
           </Dialog>
-        )}
+          )}
+        </div>
       </div>
 
       <Tabs value={filterType} onValueChange={(v) => setFilterType(v as "all" | "FR" | "NFR")}>

@@ -40,6 +40,7 @@ import {
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { sanitize } from "@/lib/sanitize";
+import { AIReviewPanel } from "@/components/ai-review-panel";
 
 export default function AdrDetail() {
   const params = useParams<{ projectId: string; id: string }>();
@@ -244,6 +245,15 @@ export default function AdrDetail() {
             <PenTool className="w-4 h-4 mr-1" />
             Diagram
           </Button>
+          <AIReviewPanel
+            adrId={Number(adrId)}
+            projectId={projectId ?? ""}
+            onPostComment={(text) => {
+              apiRequest("POST", `/api/projects/${projectId}/adrs/${adrId}/comments`, { content: text }).then(() => {
+                queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId, "adrs", adrId, "comments"] });
+              });
+            }}
+          />
           {permissions.canArchive && !adr.archived && (
             <Button
               variant="outline"

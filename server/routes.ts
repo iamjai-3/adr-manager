@@ -15,6 +15,8 @@ import { createNotification, notifyProjectMembers } from "./notifications";
 import multer from "multer";
 import { v4 as uuidv4 } from "uuid";
 import { fileStorage } from "./file-storage";
+import { getAIProvider, isAIConfigured, parseAIJson } from "./ai/index";
+import rateLimit from "express-rate-limit";
 
 // ─── Project-level access middleware ─────────────────────────────────────────
 
@@ -1262,6 +1264,339 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       res.json({ message: "User deleted" });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Internal server error"; res.status(500).json({ message: msg });
+    }
+  });
+
+  // ── AI Routes ─────────────────────────────────────────────────────────────
+
+  const aiLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 20,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { message: "Too many AI requests, please wait a minute." },
+  });
+
+  // GET /api/ai/status — let the frontend know if AI is available
+  app.get("/api/ai/status", requireAuth, (_req, res) => {
+    const configured = isAIConfigured();
+    const provider = process.env.AI_PROVIDER || "openai";
+    res.json({ enabled: configured, provider });
+  });
+
+  // POST /api/ai/generate-draft — generate a full ADR draft from a title + description
+  app.post("/api/ai/generate-draft", requireAuth, aiLimiter, async (req, res) => {
+    if (!isAIConfigured()) {
+      return res.status(503).json({ message: "AI provider is not configured" });
+    }
+    const { projectId, title, description } = req.body as {
+      projectId: number;
+      title: string;
+      description: string;
+    };
+    if (!title?.trim() || !description?.trim()) {
+      return res.status(400).json({ message: "title and description are required" });
+    }
+
+    try {
+      const { adrs, projectRequirements: reqTable } = await import("@shared/schema");
+      const { eq, desc, and } = await import("drizzle-orm");
+
+      // Fetch up to 3 recent accepted ADRs for style context
+      const exampleAdrs = await db
+        .select({ title: adrs.title, context: adrs.context, decision: adrs.decision, consequences: adrs.consequences, alternatives: adrs.alternatives })
+        .from(adrs)
+        .where(and(eq(adrs.projectId, projectId), eq(adrs.status, "accepted")))
+        .orderBy(desc(adrs.createdAt))
+        .limit(3);
+
+      // Fetch project requirements for additional context
+      const reqs = await db
+        .select()
+        .from(reqTable)
+        .where(eq(reqTable.projectId, projectId));
+
+      const reqLines = reqs.map((r) => `- [${r.type}-${r.code}] ${r.title}: ${r.description ?? ""}`).join("\n");
+      const reqContext = reqs.length > 0 ? `\nProject Requirements:\n${reqLines}` : "";
+
+      const examplesContext =
+        exampleAdrs.length > 0
+          ? `\nExisting accepted ADRs (follow their tone and style):\n${exampleAdrs
+              .map(
+                (a, i) =>
+                  `ADR ${i + 1}: "${a.title}"\nContext: ${a.context?.substring(0, 200) ?? ""}...\nDecision: ${a.decision?.substring(0, 200) ?? ""}...`
+              )
+              .join("\n\n")}`
+          : "";
+
+      const systemPrompt = `You are an expert software architect specializing in Architecture Decision Records (ADRs).
+Your task is to generate a complete, well-structured ADR draft based on the given title and description.
+Return ONLY valid JSON with exactly these four keys: "context", "decision", "consequences", "alternatives".
+Each value should be rich HTML (using <p>, <ul>, <li>, <strong>, <em> tags only — no headings).
+Be specific, actionable, and professional. Think like a senior architect.${examplesContext}${reqContext}`;
+
+      const userPrompt = `Generate a complete ADR draft for:
+Title: "${title}"
+Description: "${description}"
+
+Return JSON with keys: context, decision, consequences, alternatives.`;
+
+      const ai = getAIProvider();
+      const raw = await ai.chat(systemPrompt, userPrompt);
+      const draft = parseAIJson<{
+        context: string;
+        decision: string;
+        consequences: string;
+        alternatives: string;
+      }>(raw);
+
+      res.json(draft);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "AI generation failed";
+      res.status(500).json({ message: msg });
+    }
+  });
+
+  // POST /api/ai/review-adr — analyze an existing ADR and return structured review
+  app.post("/api/ai/review-adr", requireAuth, aiLimiter, async (req, res) => {
+    if (!isAIConfigured()) {
+      return res.status(503).json({ message: "AI provider is not configured" });
+    }
+    const { adrId, projectId } = req.body as { adrId: number; projectId: number };
+    if (!adrId || !projectId) {
+      return res.status(400).json({ message: "adrId and projectId are required" });
+    }
+
+    try {
+      const adr = await storage.getAdr(adrId);
+      if (!adr) return res.status(404).json({ message: "ADR not found" });
+
+      // Fetch related ADRs and requirements for richer context
+      const { adrRelations, adrs, projectRequirements, adrRequirementLinks } = await import("@shared/schema");
+      const { eq, or } = await import("drizzle-orm");
+
+      const relations = await db
+        .select()
+        .from(adrRelations)
+        .where(or(eq(adrRelations.sourceAdrId, adrId), eq(adrRelations.targetAdrId, adrId)));
+
+      const relatedAdrIds = relations.flatMap((r) => [r.sourceAdrId, r.targetAdrId]).filter((id) => id !== adrId);
+
+      const relatedAdrTitles =
+        relatedAdrIds.length > 0
+          ? await db.select({ title: adrs.title, status: adrs.status }).from(adrs).where(eq(adrs.id, relatedAdrIds[0]))
+          : [];
+
+      const linkedReqs = await db
+        .select({ title: projectRequirements.title, type: projectRequirements.type, code: projectRequirements.code })
+        .from(adrRequirementLinks)
+        .innerJoin(projectRequirements, eq(adrRequirementLinks.requirementId, projectRequirements.id))
+        .where(eq(adrRequirementLinks.adrId, adrId));
+
+      const systemPrompt = `You are a senior software architect performing a thorough review of an Architecture Decision Record (ADR).
+Evaluate the ADR on completeness, clarity, risk awareness, and architectural soundness.
+Return ONLY valid JSON with this exact structure:
+{
+  "overallScore": <1-10>,
+  "completeness": { "score": <1-10>, "feedback": "<string>" },
+  "clarity": { "score": <1-10>, "feedback": "<string>" },
+  "risks": ["<risk1>", "<risk2>"],
+  "suggestions": ["<actionable suggestion 1>", "<actionable suggestion 2>"],
+  "missingConsiderations": ["<missing item 1>", "<missing item 2>"]
+}
+Be specific and constructive. Reference the ADR content directly in your feedback.`;
+
+      const relatedParts = relatedAdrTitles.map((a) => `"${a.title}" (${a.status})`).join(", ");
+      const relatedContext = relatedAdrTitles.length > 0 ? `\nRelated ADRs: ${relatedParts}` : "";
+      const reqParts = linkedReqs.map((r) => `[${r.type}-${r.code}] ${r.title}`).join(", ");
+      const reqContext = linkedReqs.length > 0 ? `\nLinked Requirements: ${reqParts}` : "";
+
+      const userPrompt = `Review this ADR:
+
+Title: ${adr.title}
+Status: ${adr.status}
+Context: ${adr.context ?? "Not provided"}
+Decision: ${adr.decision ?? "Not provided"}
+Consequences: ${adr.consequences ?? "Not provided"}
+Alternatives: ${adr.alternatives ?? "Not provided"}${relatedContext}${reqContext}`;
+
+      const ai = getAIProvider();
+      const raw = await ai.chat(systemPrompt, userPrompt);
+      const review = parseAIJson<{
+        overallScore: number;
+        completeness: { score: number; feedback: string };
+        clarity: { score: number; feedback: string };
+        risks: string[];
+        suggestions: string[];
+        missingConsiderations: string[];
+      }>(raw);
+
+      res.json(review);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "AI review failed";
+      res.status(500).json({ message: msg });
+    }
+  });
+
+  // POST /api/ai/suggest-adrs — suggest new ADRs based on project requirements
+  app.post("/api/ai/suggest-adrs", requireAuth, aiLimiter, async (req, res) => {
+    if (!isAIConfigured()) {
+      return res.status(503).json({ message: "AI provider is not configured" });
+    }
+    const { projectId } = req.body as { projectId: number };
+    if (!projectId) {
+      return res.status(400).json({ message: "projectId is required" });
+    }
+
+    try {
+      const { projectRequirements, adrs } = await import("@shared/schema");
+      const { eq } = await import("drizzle-orm");
+
+      const reqs = await db.select().from(projectRequirements).where(eq(projectRequirements.projectId, projectId));
+      const existingAdrs = await db
+        .select({ title: adrs.title, status: adrs.status, context: adrs.context })
+        .from(adrs)
+        .where(eq(adrs.projectId, projectId));
+
+      if (reqs.length === 0) {
+        return res.json({ suggestions: [] });
+      }
+
+      const systemPrompt = `You are a senior software architect. Given a list of project requirements (FR/NFR) and existing ADRs, identify architectural decisions that are missing and should be documented.
+Return ONLY valid JSON:
+{
+  "suggestions": [
+    {
+      "title": "<concise ADR title>",
+      "description": "<1-2 sentences describing the decision needed>",
+      "addressesRequirements": ["<req code 1>", "<req code 2>"],
+      "priority": "high|medium|low",
+      "rationale": "<why this ADR is needed>"
+    }
+  ]
+}
+Focus on gaps — don't suggest ADRs that are clearly already covered by existing ones. Return 3-7 suggestions maximum.`;
+
+      const userPrompt = `Project Requirements:
+${reqs.map((r) => `[${r.type}-${r.code}] (${r.priority}) ${r.title}: ${r.description ?? ""}`).join("\n")}
+
+Existing ADRs:
+${existingAdrs.length > 0 ? existingAdrs.map((a) => `- "${a.title}" (${a.status})`).join("\n") : "None yet"}
+
+Suggest missing architectural decisions.`;
+
+      const ai = getAIProvider();
+      const raw = await ai.chat(systemPrompt, userPrompt);
+      const result = parseAIJson<{
+        suggestions: {
+          title: string;
+          description: string;
+          addressesRequirements: string[];
+          priority: string;
+          rationale: string;
+        }[];
+      }>(raw);
+
+      res.json(result);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "AI suggestion failed";
+      res.status(500).json({ message: msg });
+    }
+  });
+
+  // POST /api/ai/search — semantic natural-language search over ADRs
+  app.post("/api/ai/search", requireAuth, aiLimiter, async (req, res) => {
+    if (!isAIConfigured()) {
+      return res.status(503).json({ message: "AI provider is not configured" });
+    }
+    const { query, projectId } = req.body as { query: string; projectId?: number };
+    if (!query?.trim()) {
+      return res.status(400).json({ message: "query is required" });
+    }
+
+    try {
+      const { adrs, projects, projectMembers } = await import("@shared/schema");
+      const { eq, inArray, and } = await import("drizzle-orm");
+
+      // Determine which projects the user can access
+      let accessibleProjectIds: number[];
+      if (req.user!.role === "admin") {
+        const allProjects = await db.select({ id: projects.id }).from(projects);
+        accessibleProjectIds = allProjects.map((p) => p.id);
+      } else {
+        const memberships = await db
+          .select({ projectId: projectMembers.projectId })
+          .from(projectMembers)
+          .where(eq(projectMembers.userId, req.user!.id));
+        accessibleProjectIds = memberships.map((m) => m.projectId);
+      }
+
+      if (accessibleProjectIds.length === 0) {
+        return res.json({ results: [] });
+      }
+
+      const conditions = [inArray(adrs.projectId, accessibleProjectIds)];
+      if (projectId) conditions.push(eq(adrs.projectId, projectId));
+
+      const allAdrs = await db
+        .select({
+          id: adrs.id,
+          adrNumber: adrs.adrNumber,
+          title: adrs.title,
+          status: adrs.status,
+          context: adrs.context,
+          decision: adrs.decision,
+          projectId: adrs.projectId,
+          projectKey: projects.key,
+          projectName: projects.name,
+        })
+        .from(adrs)
+        .innerJoin(projects, eq(adrs.projectId, projects.id))
+        .where(and(...conditions));
+
+      if (allAdrs.length === 0) {
+        return res.json({ results: [] });
+      }
+
+      // Strip HTML tags for cleaner context
+      const stripHtml = (html: string | null): string => {
+        const noTags = (html ?? "").replaceAll(/<[^>]*>/g, " ");
+        return noTags.replaceAll(/\s+/g, " ").trim().substring(0, 300);
+      };
+
+      const adrList = allAdrs
+        .map((a) => `ID:${a.id} [${a.projectKey}-${a.adrNumber}] "${a.title}" (${a.status}) — ${stripHtml(a.context)}`)
+        .join("\n");
+
+      const systemPrompt = `You are a semantic search engine for Architecture Decision Records (ADRs).
+Given a natural language query and a list of ADRs, rank the most relevant ones.
+Return ONLY valid JSON:
+{
+  "results": [
+    { "adrId": <number>, "score": <0.0-1.0>, "explanation": "<1 sentence why this matches>" }
+  ]
+}
+Return at most 10 results, only those with score >= 0.3, sorted by score descending.`;
+
+      const userPrompt = `Query: "${query}"
+
+ADRs:
+${adrList}`;
+
+      const ai = getAIProvider();
+      const raw = await ai.chat(systemPrompt, userPrompt);
+      const aiResult = parseAIJson<{ results: { adrId: number; score: number; explanation: string }[] }>(raw);
+
+      // Merge AI scores with full ADR metadata
+      const adrMap = new Map(allAdrs.map((a) => [a.id, a]));
+      const enriched = aiResult.results
+        .filter((r) => adrMap.has(r.adrId))
+        .map((r) => ({ ...r, ...adrMap.get(r.adrId)! }));
+
+      res.json({ results: enriched });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "AI search failed";
+      res.status(500).json({ message: msg });
     }
   });
 

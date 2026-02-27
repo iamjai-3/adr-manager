@@ -27,6 +27,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { tagOptions, teamOptions } from "@shared/schema";
 import { ArrowLeft, X } from "lucide-react";
+import { AIDraftDialog } from "@/components/ai-draft-dialog";
 
 const createAdrSchema = z.object({
   title: z.string().min(1, "Title is required").max(200, "Max 200 characters"),
@@ -47,10 +48,14 @@ export default function AdrCreate() {
   const { toast } = useToast();
   const projectId = params.projectId;
 
+  // Pre-fill from AI suggestions query params (title + description)
+  const urlParams = new URLSearchParams(globalThis.location.search);
+  const prefilledTitle = urlParams.get("title") ?? "";
+
   const form = useForm<CreateAdrForm>({
     resolver: zodResolver(createAdrSchema),
     defaultValues: {
-      title: "",
+      title: prefilledTitle,
       status: "draft",
       context: "",
       decision: "",
@@ -102,7 +107,19 @@ export default function AdrCreate() {
 
       <Card>
         <CardHeader>
-          <CardTitle data-testid="text-create-title">Create New ADR</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle data-testid="text-create-title">Create New ADR</CardTitle>
+            <AIDraftDialog
+              projectId={projectId ?? ""}
+              currentTitle={form.watch("title")}
+              onApply={(draft) => {
+                form.setValue("context", draft.context, { shouldValidate: true });
+                form.setValue("decision", draft.decision, { shouldValidate: true });
+                form.setValue("consequences", draft.consequences, { shouldValidate: true });
+                form.setValue("alternatives", draft.alternatives, { shouldValidate: true });
+              }}
+            />
+          </div>
         </CardHeader>
         <CardContent>
           <Form {...form}>
