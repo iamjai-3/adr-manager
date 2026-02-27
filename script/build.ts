@@ -1,6 +1,6 @@
 import { build as esbuild } from "esbuild";
 import { build as viteBuild } from "vite";
-import { rm, readFile, copyFile } from "fs/promises";
+import { rm, readFile, copyFile, mkdir } from "fs/promises";
 
 // server deps to bundle to reduce openat(2) syscalls
 // which helps cold start times
@@ -67,6 +67,33 @@ async function buildAll() {
     "dist/table.sql",
   );
   console.log("copied connect-pg-simple/table.sql → dist/table.sql");
+
+  // ── Vercel serverless bundle ───────────────────────────────────────────────
+  // Bundle api/server.ts into a self-contained ESM file so Vercel doesn't
+  // need to resolve TypeScript source files or path aliases at runtime.
+  console.log("building vercel serverless bundle...");
+  await mkdir("api", { recursive: true });
+  await esbuild({
+    entryPoints: ["api/server.ts"],
+    platform: "node",
+    bundle: true,
+    format: "esm",
+    outfile: "api/server.js",
+    define: {
+      "process.env.NODE_ENV": '"production"',
+    },
+    minify: true,
+    // Keep native modules external (they can't be bundled)
+    external: ["pg-native"],
+    logLevel: "info",
+  });
+
+  // copy table.sql next to the vercel bundle too
+  await copyFile(
+    "node_modules/connect-pg-simple/table.sql",
+    "api/table.sql",
+  );
+  console.log("copied connect-pg-simple/table.sql → api/table.sql");
 }
 
 buildAll().catch((err) => {

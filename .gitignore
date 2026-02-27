@@ -1,6 +1,9 @@
 node_modules
 dist
 .DS_Store
+# Vercel serverless build artifacts
+api/server.js
+api/table.sql
 server/public
 vite.config.ts.*
 *.tar.gz
