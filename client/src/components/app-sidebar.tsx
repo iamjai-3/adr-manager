@@ -23,7 +23,6 @@ import {
   SidebarHeader,
   SidebarFooter,
 } from "@/components/ui/sidebar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/use-auth";
@@ -35,6 +34,27 @@ function useProjectContext() {
   const match = location.match(/^\/projects\/(\d+)/);
   return match ? parseInt(match[1]) : null;
 }
+
+function UserAvatar({ name }: { name: string }) {
+  const initials = name
+    .split(" ")
+    .map((n) => n[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+
+  return (
+    <div className="w-7 h-7 rounded-md bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold flex-shrink-0">
+      {initials}
+    </div>
+  );
+}
+
+const roleStyles: Record<string, string> = {
+  admin: "text-rose-600 dark:text-rose-400",
+  editor: "text-blue-600 dark:text-blue-400",
+  viewer: "text-muted-foreground",
+};
 
 export function AppSidebar() {
   const [location] = useLocation();
@@ -53,40 +73,59 @@ export function AppSidebar() {
 
   const isGlobalAdmin = user?.role === "admin";
 
-  const roleColors: Record<string, string> = {
-    admin: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
-    editor: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-    viewer: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400",
-  };
-
   const isActive = (path: string, exact = false) =>
     exact ? location === path : location.startsWith(path);
 
+  const navItem = (
+    href: string,
+    label: string,
+    Icon: React.ElementType,
+    active: boolean,
+    testId?: string
+  ) => (
+    <SidebarMenuItem>
+      <SidebarMenuButton
+        asChild
+        data-active={active}
+        className="data-[active=true]:bg-primary/8 data-[active=true]:text-primary data-[active=true]:font-medium relative"
+      >
+        <Link href={href} data-testid={testId}>
+          {active && (
+            <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 bg-primary rounded-r-full" />
+          )}
+          <Icon className="w-4 h-4" />
+          <span>{label}</span>
+        </Link>
+      </SidebarMenuButton>
+    </SidebarMenuItem>
+  );
+
   return (
     <Sidebar>
-      <SidebarHeader className="p-4">
+      <SidebarHeader className="px-4 py-3 border-b border-sidebar-border/60">
         <Link href="/projects">
-          <div className="flex items-center gap-2 cursor-pointer" data-testid="link-home">
-            <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center">
-              <FileText className="w-4 h-4 text-primary-foreground" />
+          <div className="flex items-center gap-2.5 cursor-pointer" data-testid="link-home">
+            <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center shadow-sm">
+              <FileText className="w-3.5 h-3.5 text-white" />
             </div>
             <div>
-              <h1 className="text-sm font-semibold tracking-tight">ADR Manager</h1>
-              <p className="text-xs text-muted-foreground">Decision Records</p>
+              <p className="text-sm font-semibold tracking-tight leading-none">ADR Manager</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5 leading-none">
+                Decision Records
+              </p>
             </div>
           </div>
         </Link>
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarContent className="pt-2">
         {projectId ? (
-          // ── Inside a project ──────────────────────────────────────────────
           <>
-            <SidebarGroup>
+            <SidebarGroup className="pt-1 pb-0">
               <SidebarGroupContent>
                 <SidebarMenu>
                   <SidebarMenuItem>
-                    <SidebarMenuButton asChild>
+                    <SidebarMenuButton asChild className="text-muted-foreground hover:text-foreground">
                       <Link href="/projects" data-testid="link-all-projects">
                         <ChevronLeft className="w-4 h-4" />
                         <span>All Projects</span>
@@ -98,96 +137,58 @@ export function AppSidebar() {
             </SidebarGroup>
 
             <SidebarGroup>
-              <SidebarGroupLabel>
+              <SidebarGroupLabel className="text-[10px] uppercase tracking-widest text-muted-foreground/70 font-semibold px-2">
                 {currentProject?.name ?? "Project"}
               </SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      asChild
-                      data-active={isActive(`/projects/${projectId}`, true)}
-                      className="data-[active=true]:bg-sidebar-accent"
-                    >
-                      <Link href={`/projects/${projectId}`} data-testid="link-dashboard">
-                        <LayoutDashboard className="w-4 h-4" />
-                        <span>Dashboard</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      asChild
-                      data-active={
-                        isActive(`/projects/${projectId}/adrs`) &&
-                        !isActive(`/projects/${projectId}/adrs/new`) &&
-                        !location.includes("/edit")
-                      }
-                      className="data-[active=true]:bg-sidebar-accent"
-                    >
-                      <Link href={`/projects/${projectId}/adrs/new`} data-testid="link-create-adr">
-                        <Plus className="w-4 h-4" />
-                        <span>New ADR</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      asChild
-                      data-active={isActive(`/projects/${projectId}/requirements`)}
-                      className="data-[active=true]:bg-sidebar-accent"
-                    >
-                      <Link href={`/projects/${projectId}/requirements`} data-testid="link-requirements">
-                        <ListChecks className="w-4 h-4" />
-                        <span>Requirements</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-
-                  {(isGlobalAdmin || currentProject) && (
-                    <SidebarMenuItem>
-                      <SidebarMenuButton
-                        asChild
-                        data-active={isActive(`/projects/${projectId}/settings`)}
-                        className="data-[active=true]:bg-sidebar-accent"
-                      >
-                        <Link href={`/projects/${projectId}/settings`} data-testid="link-project-settings">
-                          <Settings className="w-4 h-4" />
-                          <span>Settings</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
+                  {navItem(
+                    `/projects/${projectId}`,
+                    "Dashboard",
+                    LayoutDashboard,
+                    isActive(`/projects/${projectId}`, true),
+                    "link-dashboard"
                   )}
+                  {navItem(
+                    `/projects/${projectId}/adrs/new`,
+                    "New ADR",
+                    Plus,
+                    isActive(`/projects/${projectId}/adrs/new`),
+                    "link-create-adr"
+                  )}
+                  {navItem(
+                    `/projects/${projectId}/requirements`,
+                    "Requirements",
+                    ListChecks,
+                    isActive(`/projects/${projectId}/requirements`),
+                    "link-requirements"
+                  )}
+                  {(isGlobalAdmin || currentProject) &&
+                    navItem(
+                      `/projects/${projectId}/settings`,
+                      "Settings",
+                      Settings,
+                      isActive(`/projects/${projectId}/settings`),
+                      "link-project-settings"
+                    )}
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
           </>
         ) : (
-          // ── Projects list view ────────────────────────────────────────────
           <SidebarGroup>
-            <SidebarGroupLabel>Projects</SidebarGroupLabel>
+            <SidebarGroupLabel className="text-[10px] uppercase tracking-widest text-muted-foreground/70 font-semibold px-2">
+              Projects
+            </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    asChild
-                    data-active={isActive("/projects", true)}
-                    className="data-[active=true]:bg-sidebar-accent"
-                  >
-                    <Link href="/projects" data-testid="link-projects">
-                      <FolderKanban className="w-4 h-4" />
-                      <span>All Projects</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                {navItem("/projects", "All Projects", FolderKanban, isActive("/projects", true), "link-projects")}
 
                 {projectsLoading && (
                   <SidebarMenuItem>
-                    <div className="px-2 py-1 space-y-1.5">
-                      <Skeleton className="h-4 w-32" />
-                      <Skeleton className="h-4 w-24" />
+                    <div className="px-2 py-1.5 space-y-1.5">
+                      <Skeleton className="h-3.5 w-28" />
+                      <Skeleton className="h-3.5 w-20" />
                     </div>
                   </SidebarMenuItem>
                 )}
@@ -197,10 +198,13 @@ export function AppSidebar() {
                     <SidebarMenuButton
                       asChild
                       data-active={isActive(`/projects/${p.id}`)}
-                      className="data-[active=true]:bg-sidebar-accent"
+                      className="data-[active=true]:bg-primary/8 data-[active=true]:text-primary data-[active=true]:font-medium relative"
                     >
                       <Link href={`/projects/${p.id}`} data-testid={`link-project-${p.id}`}>
-                        <span className="font-mono text-xs text-muted-foreground w-8 flex-shrink-0">
+                        {isActive(`/projects/${p.id}`) && (
+                          <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 bg-primary rounded-r-full" />
+                        )}
+                        <span className="font-mono text-[10px] text-muted-foreground w-8 flex-shrink-0 font-medium">
                           {p.key}
                         </span>
                         <span className="truncate">{p.name}</span>
@@ -215,59 +219,41 @@ export function AppSidebar() {
 
         {isGlobalAdmin && (
           <SidebarGroup>
-            <SidebarGroupLabel>Administration</SidebarGroupLabel>
+            <SidebarGroupLabel className="text-[10px] uppercase tracking-widest text-muted-foreground/70 font-semibold px-2">
+              Administration
+            </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    asChild
-                    data-active={isActive("/users")}
-                    className="data-[active=true]:bg-sidebar-accent"
-                  >
-                    <Link href="/users" data-testid="link-users">
-                      <Users className="w-4 h-4" />
-                      <span>Users</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    asChild
-                    data-active={isActive("/audit")}
-                    className="data-[active=true]:bg-sidebar-accent"
-                  >
-                    <Link href="/audit" data-testid="link-audit">
-                      <Shield className="w-4 h-4" />
-                      <span>Audit Log</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                {navItem("/users", "Users", Users, isActive("/users"), "link-users")}
+                {navItem("/audit", "Audit Log", Shield, isActive("/audit"), "link-audit")}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
         )}
       </SidebarContent>
 
-      <SidebarFooter className="p-4 space-y-3">
+      <SidebarFooter className="px-3 py-3 border-t border-sidebar-border/60">
         {user && (
           <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium truncate" data-testid="text-user-name">
-                {user.displayName}
-              </span>
-              <Badge className={`text-[10px] px-1.5 py-0 ${roleColors[user.role]}`} data-testid="text-user-role">
-                {user.role}
-              </Badge>
+            <div className="flex items-center gap-2.5 px-1">
+              <UserAvatar name={user.displayName} />
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-medium truncate leading-none" data-testid="text-user-name">
+                  {user.displayName}
+                </p>
+                <p className={`text-[10px] mt-0.5 leading-none font-medium capitalize ${roleStyles[user.role] || "text-muted-foreground"}`} data-testid="text-user-role">
+                  {user.role}
+                </p>
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground truncate">@{user.username}</p>
             <Button
               variant="ghost"
               size="sm"
-              className="w-full justify-start text-muted-foreground hover:text-foreground"
+              className="w-full justify-start text-muted-foreground hover:text-foreground h-8 px-2 text-xs"
               onClick={logout}
               data-testid="button-logout"
             >
-              <LogOut className="w-4 h-4 mr-2" />
+              <LogOut className="w-3.5 h-3.5 mr-2" />
               Sign out
             </Button>
           </div>

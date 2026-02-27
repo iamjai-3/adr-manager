@@ -1,13 +1,18 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/use-auth";
-import { FileText, Loader2 } from "lucide-react";
+import { FileText, Loader2, GitBranch, Search, History } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+
+const FEATURES = [
+  { icon: GitBranch, text: "Track decisions from draft to acceptance" },
+  { icon: History, text: "Full version history and audit trail" },
+  { icon: Search, text: "AI-queryable knowledge across your org" },
+];
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -23,7 +28,6 @@ export default function AuthPage() {
   });
 
   const setupNeeded = setupData?.setupNeeded === true;
-
   const showRegister = !isLogin && setupNeeded;
   const effectiveIsLogin = setupNeeded ? isLogin : true;
 
@@ -45,7 +49,11 @@ export default function AuthPage() {
         const obj = JSON.parse(cleaned);
         parsed = obj.message || cleaned;
       } catch {}
-      toast({ title: effectiveIsLogin && !showRegister ? "Login failed" : "Registration failed", description: parsed, variant: "destructive" });
+      toast({
+        title: effectiveIsLogin && !showRegister ? "Login failed" : "Registration failed",
+        description: parsed,
+        variant: "destructive",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -53,136 +61,193 @@ export default function AuthPage() {
 
   if (setupLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Skeleton className="h-96 w-full max-w-md" />
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="space-y-3 w-full max-w-sm px-6">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+        </div>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen flex">
-      <div className="flex-1 flex items-center justify-center p-6">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <div className="flex justify-center mb-4">
-              <div className="w-12 h-12 rounded-lg bg-primary flex items-center justify-center">
-                <FileText className="w-6 h-6 text-primary-foreground" />
-              </div>
+      {/* ── Brand Panel ── */}
+      <div
+        className="hidden lg:flex flex-[1.1] flex-col relative overflow-hidden"
+        style={{
+          background: "hsl(234 12% 8%)",
+          backgroundImage:
+            "radial-gradient(circle at 1px 1px, rgba(255,255,255,0.055) 1px, transparent 0)",
+          backgroundSize: "28px 28px",
+        }}
+      >
+        {/* Gradient overlay */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background:
+              "radial-gradient(ellipse 80% 60% at 30% 40%, rgba(99,102,241,0.13) 0%, transparent 70%)",
+          }}
+        />
+
+        <div className="relative flex flex-col h-full p-10">
+          {/* Logo */}
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-indigo-500 flex items-center justify-center shadow-lg">
+              <FileText className="w-4 h-4 text-white" />
             </div>
-            <CardTitle className="text-xl" data-testid="text-auth-title">
-              {setupNeeded && !isLogin
-                ? "Create Admin Account"
-                : "Sign in to ADR Manager"}
-            </CardTitle>
-            <CardDescription>
-              {setupNeeded && !isLogin
-                ? "Set up the first admin account to get started"
-                : "Enter your credentials to access your team's decisions"}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {showRegister && (
-                <div className="space-y-2">
-                  <Label htmlFor="displayName">Display Name</Label>
-                  <Input
-                    id="displayName"
-                    placeholder="Jane Architect"
-                    value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
-                    required
-                    data-testid="input-display-name"
-                  />
-                </div>
-              )}
-              <div className="space-y-2">
-                <Label htmlFor="username">Username</Label>
-                <Input
-                  id="username"
-                  placeholder="jane.architect"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  required
-                  data-testid="input-username"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  data-testid="input-password"
-                />
-              </div>
-              <Button type="submit" className="w-full" disabled={isSubmitting} data-testid="button-auth-submit">
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    {showRegister ? "Creating admin account..." : "Signing in..."}
-                  </>
-                ) : (
-                  showRegister ? "Create Admin Account" : "Sign In"
-                )}
-              </Button>
-            </form>
+            <span className="text-white font-semibold text-sm tracking-tight">ADR Manager</span>
+          </div>
 
-            {setupNeeded && (
-              <div className="mt-4 text-center text-sm">
-                <span className="text-muted-foreground">
-                  {isLogin ? "No accounts exist yet." : "Already have an account?"}
-                </span>{" "}
-                <button
-                  type="button"
-                  className="text-primary hover:underline font-medium"
-                  onClick={() => {
-                    setIsLogin(!isLogin);
-                    setUsername("");
-                    setPassword("");
-                    setDisplayName("");
-                  }}
-                  data-testid="button-toggle-auth"
-                >
-                  {isLogin ? "Create first admin" : "Sign in"}
-                </button>
-              </div>
-            )}
+          {/* Main copy */}
+          <div className="flex-1 flex flex-col justify-center max-w-xs">
+            <h2 className="text-[1.75rem] font-bold text-white leading-[1.25] tracking-tight">
+              Every architecture decision,{" "}
+              <span className="text-indigo-400">documented and traceable.</span>
+            </h2>
+            <p className="mt-4 text-white/45 text-sm leading-relaxed">
+              Capture the <em>why</em> behind technical choices. Build a knowledge base your
+              whole team can trust and query.
+            </p>
 
-            {!setupNeeded && (
-              <p className="mt-4 text-xs text-muted-foreground text-center">
-                Need an account? Contact your team admin.
-              </p>
-            )}
-          </CardContent>
-        </Card>
+            <ul className="mt-8 space-y-3.5">
+              {FEATURES.map(({ icon: Icon, text }) => (
+                <li key={text} className="flex items-center gap-3">
+                  <div className="w-6 h-6 rounded-md bg-indigo-500/15 flex items-center justify-center flex-shrink-0">
+                    <Icon className="w-3 h-3 text-indigo-400" />
+                  </div>
+                  <span className="text-sm text-white/60">{text}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <p className="text-xs text-white/20 font-medium tracking-wide uppercase">
+            Architecture · Decisions · Records
+          </p>
+        </div>
       </div>
 
-      <div className="hidden lg:flex flex-1 bg-muted items-center justify-center p-12">
-        <div className="max-w-md space-y-6">
-          <h2 className="text-2xl font-bold tracking-tight">
-            Architecture Decision Records
-          </h2>
-          <p className="text-muted-foreground leading-relaxed">
-            Capture the "why" behind technical decisions. Track proposals, reviews,
-            and approvals with full version history and team collaboration.
-          </p>
-          <div className="space-y-3">
-            <div className="flex items-center gap-3">
-              <div className="w-2 h-2 rounded-full bg-primary" />
-              <span className="text-sm">Track decisions from draft to acceptance</span>
+      {/* ── Form Panel ── */}
+      <div className="flex-1 flex items-center justify-center p-8 bg-background">
+        <div className="w-full max-w-sm">
+          {/* Mobile logo */}
+          <div className="flex items-center gap-2 mb-10 lg:hidden">
+            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+              <FileText className="w-4 h-4 text-white" />
             </div>
-            <div className="flex items-center gap-3">
-              <div className="w-2 h-2 rounded-full bg-primary" />
-              <span className="text-sm">Full version history and audit trail</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="w-2 h-2 rounded-full bg-primary" />
-              <span className="text-sm">Admin-managed team access with role-based permissions</span>
-            </div>
+            <span className="font-semibold text-sm">ADR Manager</span>
           </div>
+
+          <div className="mb-8">
+            <h1
+              className="text-2xl font-bold tracking-tight text-foreground"
+              data-testid="text-auth-title"
+            >
+              {setupNeeded && !isLogin ? "Create admin account" : "Welcome back"}
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1.5">
+              {setupNeeded && !isLogin
+                ? "Set up the first admin account to get started"
+                : "Sign in to access your team's decisions"}
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {showRegister && (
+              <div className="space-y-1.5">
+                <Label htmlFor="displayName" className="text-sm font-medium">
+                  Display Name
+                </Label>
+                <Input
+                  id="displayName"
+                  placeholder="Jane Architect"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  required
+                  className="h-10"
+                  data-testid="input-display-name"
+                />
+              </div>
+            )}
+
+            <div className="space-y-1.5">
+              <Label htmlFor="username" className="text-sm font-medium">
+                Username
+              </Label>
+              <Input
+                id="username"
+                placeholder="jane.architect"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+                className="h-10"
+                data-testid="input-username"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="password" className="text-sm font-medium">
+                Password
+              </Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="h-10"
+                data-testid="input-password"
+              />
+            </div>
+
+            <Button
+              type="submit"
+              className="w-full h-10 mt-2 font-medium"
+              disabled={isSubmitting}
+              data-testid="button-auth-submit"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  {showRegister ? "Creating account..." : "Signing in..."}
+                </>
+              ) : showRegister ? (
+                "Create Admin Account"
+              ) : (
+                "Sign In"
+              )}
+            </Button>
+          </form>
+
+          {setupNeeded && (
+            <p className="mt-5 text-center text-sm text-muted-foreground">
+              {isLogin ? "No accounts exist yet." : "Already have an account?"}{" "}
+              <button
+                type="button"
+                className="text-primary hover:underline font-medium"
+                onClick={() => {
+                  setIsLogin(!isLogin);
+                  setUsername("");
+                  setPassword("");
+                  setDisplayName("");
+                }}
+                data-testid="button-toggle-auth"
+              >
+                {isLogin ? "Create first admin" : "Sign in"}
+              </button>
+            </p>
+          )}
+
+          {!setupNeeded && (
+            <p className="mt-5 text-xs text-muted-foreground text-center">
+              Need an account? Contact your team admin.
+            </p>
+          )}
         </div>
       </div>
     </div>

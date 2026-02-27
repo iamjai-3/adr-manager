@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, FileText, Search } from "lucide-react";
+import { Plus, FileText, Search, ArrowUpRight } from "lucide-react";
 import { useState, useMemo } from "react";
 import type { Adr } from "@shared/schema";
 import { statusLabels, rolePermissions } from "@shared/schema";
@@ -57,15 +57,15 @@ export default function AdrList() {
 
   if (isLoading) {
     return (
-      <div className="p-6 space-y-4">
+      <div className="p-6 space-y-4 max-w-4xl mx-auto">
         <div className="flex items-center justify-between gap-4">
-          <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-9 w-32" />
+          <Skeleton className="h-7 w-48" />
+          <Skeleton className="h-9 w-28" />
         </div>
-        <div className="flex gap-3 flex-wrap">
-          <Skeleton className="h-9 w-64" />
-          <Skeleton className="h-9 w-36" />
-          <Skeleton className="h-9 w-36" />
+        <div className="flex gap-2.5 flex-wrap">
+          <Skeleton className="h-9 w-60" />
+          <Skeleton className="h-9 w-32" />
+          <Skeleton className="h-9 w-32" />
         </div>
         {[1, 2, 3, 4, 5].map((i) => (
           <Skeleton key={i} className="h-24" />
@@ -75,37 +75,38 @@ export default function AdrList() {
   }
 
   return (
-    <div className="p-6 space-y-5 max-w-5xl mx-auto">
+    <div className="p-6 space-y-5 max-w-4xl mx-auto">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight" data-testid="text-adr-list-title">
+          <h1 className="text-xl font-bold tracking-tight" data-testid="text-adr-list-title">
             Architecture Decision Records
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="text-xs text-muted-foreground mt-0.5">
             {filteredAdrs.length} of {adrs?.length || 0} decisions
           </p>
         </div>
         {permissions.canCreate && (
-          <Button onClick={() => navigate("/adrs/new")} data-testid="button-create-adr">
-            <Plus className="w-4 h-4 mr-2" />
+          <Button size="sm" onClick={() => navigate("/adrs/new")} data-testid="button-create-adr">
+            <Plus className="w-3.5 h-3.5 mr-1.5" />
             New ADR
           </Button>
         )}
       </div>
 
-      <div className="flex gap-3 flex-wrap">
-        <div className="relative flex-1 min-w-[200px] max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+      {/* Filters */}
+      <div className="flex gap-2.5 flex-wrap">
+        <div className="relative flex-1 min-w-[200px] max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
           <Input
             placeholder="Search decisions..."
-            className="pl-9"
+            className="pl-9 h-9"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             data-testid="input-search"
           />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[150px]" data-testid="select-status-filter">
+          <SelectTrigger className="w-[140px] h-9 text-sm" data-testid="select-status-filter">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
@@ -118,7 +119,7 @@ export default function AdrList() {
           </SelectContent>
         </Select>
         <Select value={teamFilter} onValueChange={setTeamFilter}>
-          <SelectTrigger className="w-[150px]" data-testid="select-team-filter">
+          <SelectTrigger className="w-[140px] h-9 text-sm" data-testid="select-team-filter">
             <SelectValue placeholder="Team" />
           </SelectTrigger>
           <SelectContent>
@@ -133,78 +134,80 @@ export default function AdrList() {
       </div>
 
       {filteredAdrs.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-16">
-            <FileText className="w-12 h-12 text-muted-foreground/40 mb-4" />
-            <h3 className="text-base font-medium mb-1">No decisions found</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              {searchQuery || statusFilter !== "all" || teamFilter !== "all"
-                ? "Try adjusting your filters"
-                : "Create your first architecture decision record"}
-            </p>
-            {permissions.canCreate && !searchQuery && statusFilter === "all" && teamFilter === "all" && (
-              <Button onClick={() => navigate("/adrs/new")} data-testid="button-create-first-adr">
-                <Plus className="w-4 h-4 mr-2" />
-                Create First ADR
-              </Button>
-            )}
-          </CardContent>
-        </Card>
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center mb-4">
+            <FileText className="w-7 h-7 text-muted-foreground/50" />
+          </div>
+          <h3 className="text-sm font-semibold mb-1">No decisions found</h3>
+          <p className="text-sm text-muted-foreground mb-5">
+            {searchQuery || statusFilter !== "all" || teamFilter !== "all"
+              ? "Try adjusting your filters"
+              : "Create your first architecture decision record"}
+          </p>
+          {permissions.canCreate && !searchQuery && statusFilter === "all" && teamFilter === "all" && (
+            <Button size="sm" onClick={() => navigate("/adrs/new")} data-testid="button-create-first-adr">
+              <Plus className="w-3.5 h-3.5 mr-1.5" />
+              Create First ADR
+            </Button>
+          )}
+        </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {filteredAdrs.map((adr) => (
             <Link key={adr.id} href={`/adrs/${adr.id}`}>
               <Card
-                className="cursor-pointer hover-elevate transition-colors"
+                className="cursor-pointer hover:shadow-md transition-all duration-150 hover:-translate-y-px shadow-sm group"
                 data-testid={`card-adr-${adr.id}`}
               >
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                        <span className="text-xs font-mono text-muted-foreground font-medium">
+                        <span className="text-[10px] font-mono text-muted-foreground font-semibold bg-muted px-1.5 py-0.5 rounded">
                           ADR-{String(adr.adrNumber).padStart(3, "0")}
                         </span>
                         <StatusBadge status={adr.status} />
                         {adr.team && (
-                          <Badge variant="secondary" className="text-xs">
+                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5">
                             {adr.team}
                           </Badge>
                         )}
                       </div>
-                      <h3 className="font-semibold text-sm mb-1">{adr.title}</h3>
-                      <p className="text-xs text-muted-foreground line-clamp-2">
+                      <h3 className="font-semibold text-sm mb-1.5 group-hover:text-primary transition-colors">
+                        {adr.title}
+                      </h3>
+                      <p className="text-xs text-muted-foreground line-clamp-1 leading-relaxed">
                         {adr.context}
                       </p>
                       {(adr.tags || []).length > 0 && (
                         <div className="flex gap-1.5 mt-2 flex-wrap">
                           {(adr.tags || []).slice(0, 4).map((tag) => (
-                            <Badge
+                            <span
                               key={tag}
-                              variant="outline"
-                              className="text-[10px] px-1.5 py-0"
+                              className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground font-medium"
                             >
                               {tag}
-                            </Badge>
+                            </span>
                           ))}
                           {(adr.tags || []).length > 4 && (
                             <span className="text-[10px] text-muted-foreground">
-                              +{(adr.tags || []).length - 4}
+                              +{(adr.tags || []).length - 4} more
                             </span>
                           )}
                         </div>
                       )}
                     </div>
-                    <div className="text-right flex-shrink-0">
-                      <p className="text-xs text-muted-foreground">
+                    <div className="text-right flex-shrink-0 space-y-0.5">
+                      <p className="text-xs text-muted-foreground tabular-nums">
                         {new Date(adr.createdAt).toLocaleDateString()}
                       </p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
+                      <p className="text-[10px] text-muted-foreground">
                         by {adr.author}
                       </p>
-                      <p className="text-[10px] font-mono text-muted-foreground mt-1">
+                      <p className="text-[10px] font-mono text-muted-foreground/60">
                         v{adr.version}
                       </p>
+                      <ArrowUpRight className="w-3 h-3 text-muted-foreground/0 group-hover:text-muted-foreground transition-all ml-auto" />
                     </div>
                   </div>
                 </CardContent>
