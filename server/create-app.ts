@@ -39,6 +39,12 @@ export async function createApp(): Promise<{ app: express.Express; httpServer: S
   const app = express();
   const httpServer = createServer(app);
 
+  // Trust the first proxy hop (Vercel's load balancer / reverse proxy).
+  // Required so that: (a) session cookies with secure:true are set correctly,
+  // (b) express-rate-limit reads the real client IP from X-Forwarded-For,
+  // and (c) req.protocol returns "https" behind Vercel's TLS terminator.
+  app.set("trust proxy", 1);
+
   // ── Security headers ──────────────────────────────────────────────────────
   app.use(helmet({ contentSecurityPolicy: false }));
 

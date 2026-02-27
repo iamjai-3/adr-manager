@@ -2,6 +2,12 @@
   "version": 2,
   "buildCommand": "npm run build",
   "outputDirectory": "dist/public",
+  "functions": {
+    "api/server.js": {
+      "includeFiles": "api/table.sql",
+      "maxDuration": 30
+    }
+  },
   "rewrites": [
     { "source": "/api/:path*", "destination": "/api/server" },
     { "source": "/(.*)",       "destination": "/index.html" }
