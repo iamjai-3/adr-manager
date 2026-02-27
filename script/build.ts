@@ -83,7 +83,11 @@ async function buildAll() {
       "process.env.NODE_ENV": '"production"',
     },
     minify: true,
-    // Keep native modules external (they can't be bundled)
+    // Inject a CJS compatibility shim so that bundled CommonJS dependencies
+    // (express, pg, etc.) can call require() inside an ESM module.
+    banner: {
+      js: `import{createRequire}from"module";const require=createRequire(import.meta.url);`,
+    },
     external: ["pg-native"],
     logLevel: "info",
   });
