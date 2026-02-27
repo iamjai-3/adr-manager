@@ -1,8 +1,8 @@
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import session from "express-session";
-import { scrypt, randomBytes, timingSafeEqual } from "crypto";
-import { promisify } from "util";
+import { scrypt, randomBytes, timingSafeEqual } from "node:crypto";
+import { promisify } from "node:util";
 import { storage } from "./storage";
 import type { Express, Request, Response, NextFunction } from "express";
 import { pool } from "./db";
@@ -97,8 +97,9 @@ export function setupAuth(app: Express) {
     try {
       const allUsers = await storage.getUsers();
       res.json({ setupNeeded: allUsers.length === 0 });
-    } catch (err: any) {
-      res.status(500).json({ message: err.message });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Internal server error";
+      res.status(500).json({ message });
     }
   });
 
@@ -144,13 +145,14 @@ export function setupAuth(app: Express) {
         const { password: _, ...safeUser } = user;
         return res.status(201).json(safeUser);
       });
-    } catch (err: any) {
-      res.status(500).json({ message: err.message });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Internal server error";
+      res.status(500).json({ message });
     }
   });
 
   app.post("/api/auth/login", (req: Request, res: Response, next: NextFunction) => {
-    passport.authenticate("local", (err: any, user: User | false, info: any) => {
+    passport.authenticate("local", (err: unknown, user: User | false, info: { message?: string } | undefined) => {
       if (err) return next(err);
       if (!user) {
         return res.status(401).json({ message: info?.message || "Invalid credentials" });

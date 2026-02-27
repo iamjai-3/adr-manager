@@ -1,5 +1,6 @@
 import { db } from "./db";
 import { notifications } from "@shared/schema";
+import { logger } from "./logger";
 
 export interface NotificationData {
   userId: string;
@@ -13,7 +14,10 @@ export async function createNotification(data: NotificationData): Promise<void> 
   try {
     await db.insert(notifications).values(data);
   } catch (err) {
-    console.error("Failed to create notification:", err);
+    logger.error("Failed to create notification", {
+      message: err instanceof Error ? err.message : String(err),
+      userId: data.userId,
+    });
   }
 }
 
@@ -42,15 +46,12 @@ export async function notifyProjectMembers(
     const members = await query;
 
     for (const member of members) {
-      await createNotification({
-        userId: member.userId,
-        type,
-        title,
-        body,
-        href,
-      });
+      await createNotification({ userId: member.userId, type, title, body, href });
     }
   } catch (err) {
-    console.error("Failed to notify project members:", err);
+    logger.error("Failed to notify project members", {
+      message: err instanceof Error ? err.message : String(err),
+      projectId,
+    });
   }
 }

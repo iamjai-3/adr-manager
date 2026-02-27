@@ -1,4 +1,5 @@
 import { useState } from "react";
+import type { InsertProjectRequirement } from "@shared/schema";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -66,7 +67,7 @@ export default function ProjectRequirements() {
   const permissions = projectRolePermissions[myProjectRole];
 
   const createMutation = useMutation({
-    mutationFn: async (data: any) => {
+    mutationFn: async (data: Omit<InsertProjectRequirement, "projectId" | "createdAt" | "updatedAt">) => {
       const res = await fetch(`/api/projects/${projectId}/requirements`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -87,7 +88,7 @@ export default function ProjectRequirements() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: any }) => {
+    mutationFn: async ({ id, data }: { id: number; data: Partial<InsertProjectRequirement> }) => {
       const res = await fetch(`/api/projects/${projectId}/requirements/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -276,7 +277,7 @@ export default function ProjectRequirements() {
         )}
       </div>
 
-      <Tabs value={filterType} onValueChange={(v) => setFilterType(v as any)}>
+      <Tabs value={filterType} onValueChange={(v) => setFilterType(v as "all" | "FR" | "NFR")}>
         <TabsList>
           <TabsTrigger value="all">All ({requirements.length})</TabsTrigger>
           <TabsTrigger value="FR">

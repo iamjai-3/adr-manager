@@ -14,7 +14,7 @@ import {
   projectRequirements, adrRequirementLinks, attachments, diagrams,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, sql, or, and } from "drizzle-orm";
+import { eq, desc, sql, or, and, inArray } from "drizzle-orm";
 
 // ─── Project Member with User info ───────────────────────────────────────────
 
@@ -112,7 +112,7 @@ export class DatabaseStorage implements IStorage {
     const result = await db
       .select()
       .from(projects)
-      .where(sql`${projects.id} = ANY(${sql.raw(`ARRAY[${ids.join(",")}]::int[]`)})`)
+      .where(inArray(projects.id, ids))
       .orderBy(desc(projects.createdAt));
     return result;
   }

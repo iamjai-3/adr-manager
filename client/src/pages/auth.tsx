@@ -41,14 +41,16 @@ export default function AuthPage() {
       } else {
         await register(username, password, displayName);
       }
-    } catch (err: any) {
-      const msg = err.message || "Something went wrong";
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Something went wrong";
       const cleaned = msg.replace(/^\d+:\s*/, "").replace(/^"(.*)"$/, "$1");
       let parsed = cleaned;
       try {
-        const obj = JSON.parse(cleaned);
+        const obj = JSON.parse(cleaned) as { message?: string };
         parsed = obj.message || cleaned;
-      } catch {}
+      } catch {
+        // keep cleaned as-is
+      }
       toast({
         title: effectiveIsLogin && !showRegister ? "Login failed" : "Registration failed",
         description: parsed,

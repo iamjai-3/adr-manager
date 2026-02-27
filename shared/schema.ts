@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, timestamp, boolean, serial, unique } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, timestamp, boolean, serial, unique, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -35,7 +35,10 @@ export const projectMembers = pgTable("project_members", {
   userId: varchar("user_id").notNull(),
   role: text("role").notNull().default("viewer"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+}, (t) => ({
+  projectIdx: index("pm_project_idx").on(t.projectId),
+  userIdx: index("pm_user_idx").on(t.userId),
+}));
 
 export type ProjectMember = typeof projectMembers.$inferSelect;
 
@@ -67,8 +70,11 @@ export const adrs = pgTable("adrs", {
   archiveReason: text("archive_reason"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
-}, (table) => ({
-  projectAdrNumberUnique: unique().on(table.projectId, table.adrNumber),
+}, (t) => ({
+  projectAdrNumberUnique: unique().on(t.projectId, t.adrNumber),
+  projectIdx: index("adrs_project_idx").on(t.projectId),
+  statusIdx: index("adrs_status_idx").on(t.status),
+  authorIdx: index("adrs_author_idx").on(t.author),
 }));
 
 export const insertAdrSchema = createInsertSchema(adrs).omit({
@@ -99,7 +105,9 @@ export const adrVersions = pgTable("adr_versions", {
   changeReason: text("change_reason"),
   changedBy: varchar("changed_by", { length: 100 }).notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+}, (t) => ({
+  adrIdx: index("adr_versions_adr_idx").on(t.adrId),
+}));
 
 export const insertAdrVersionSchema = createInsertSchema(adrVersions).omit({
   id: true,
@@ -252,7 +260,11 @@ export const auditLogs = pgTable("audit_logs", {
   changes: text("changes"),
   metadata: text("metadata"),
   performedAt: timestamp("performed_at").notNull().defaultNow(),
-});
+}, (t) => ({
+  entityTypeIdx: index("audit_entity_type_idx").on(t.entityType),
+  performedByIdx: index("audit_performed_by_idx").on(t.performedBy),
+  performedAtIdx: index("audit_performed_at_idx").on(t.performedAt),
+}));
 
 export type AuditLog = typeof auditLogs.$inferSelect;
 export type InsertAuditLog = typeof auditLogs.$inferInsert;
@@ -316,7 +328,10 @@ export const notifications = pgTable("notifications", {
   href: text("href"),
   isRead: boolean("is_read").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+}, (t) => ({
+  userIdx: index("notifs_user_idx").on(t.userId),
+  isReadIdx: index("notifs_is_read_idx").on(t.isRead),
+}));
 
 export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = typeof notifications.$inferInsert;
@@ -331,7 +346,9 @@ export const diagrams = pgTable("diagrams", {
   createdBy: varchar("created_by", { length: 100 }).notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+}, (t) => ({
+  adrIdx: index("diagrams_adr_idx").on(t.adrId),
+}));
 
 export type Diagram = typeof diagrams.$inferSelect;
 export type InsertDiagram = typeof diagrams.$inferInsert;

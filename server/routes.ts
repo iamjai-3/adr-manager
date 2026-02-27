@@ -123,8 +123,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const user = req.user!;
       const list = await storage.getProjects(user.id, user.role === "admin");
       res.json(list);
-    } catch (err: any) {
-      res.status(500).json({ message: err.message });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Internal server error"; res.status(500).json({ message: msg });
     }
   });
 
@@ -150,11 +150,11 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         metadata: { name: project.name, key: project.key },
       });
       res.status(201).json(project);
-    } catch (err: any) {
-      if (err.message?.includes("unique")) {
+    } catch (err) {
+      if (err instanceof Error && err.message?.includes("unique")) {
         return res.status(409).json({ message: "Project key already in use" });
       }
-      res.status(500).json({ message: err.message });
+      const msg = err instanceof Error ? err.message : "Internal server error"; res.status(500).json({ message: msg });
     }
   });
 
@@ -163,8 +163,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const project = await storage.getProject(parseInt(req.params.projectId));
       if (!project) return res.status(404).json({ message: "Project not found" });
       res.json(project);
-    } catch (err: any) {
-      res.status(500).json({ message: err.message });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Internal server error"; res.status(500).json({ message: msg });
     }
   });
 
@@ -184,8 +184,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         changes: parsed.data,
       });
       res.json(project);
-    } catch (err: any) {
-      res.status(500).json({ message: err.message });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Internal server error"; res.status(500).json({ message: msg });
     }
   });
 
@@ -201,8 +201,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         performedBy: req.user!.displayName,
       });
       res.json({ message: "Project deleted" });
-    } catch (err: any) {
-      res.status(500).json({ message: err.message });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Internal server error"; res.status(500).json({ message: msg });
     }
   });
 
@@ -212,8 +212,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     try {
       const members = await storage.getProjectMembers(parseInt(req.params.projectId));
       res.json(members);
-    } catch (err: any) {
-      res.status(500).json({ message: err.message });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Internal server error"; res.status(500).json({ message: msg });
     }
   });
 
@@ -248,8 +248,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       });
 
       res.status(201).json(member);
-    } catch (err: any) {
-      res.status(500).json({ message: err.message });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Internal server error"; res.status(500).json({ message: msg });
     }
   });
 
@@ -274,8 +274,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         changes: { role: { after: parsed.data.role } },
       });
       res.json(member);
-    } catch (err: any) {
-      res.status(500).json({ message: err.message });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Internal server error"; res.status(500).json({ message: msg });
     }
   });
 
@@ -293,8 +293,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         metadata: { projectId, userId },
       });
       res.json({ message: "Member removed" });
-    } catch (err: any) {
-      res.status(500).json({ message: err.message });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Internal server error"; res.status(500).json({ message: msg });
     }
   });
 
@@ -309,8 +309,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         .filter((u) => !memberUserIds.has(u.id))
         .map(({ password: _pw, ...u }) => u);
       res.json(candidates);
-    } catch (err: any) {
-      res.status(500).json({ message: err.message });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Internal server error"; res.status(500).json({ message: msg });
     }
   });
 
@@ -320,8 +320,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     try {
       const projectAdrs = await storage.getAdrs(parseInt(req.params.projectId));
       res.json(projectAdrs);
-    } catch (err: any) {
-      res.status(500).json({ message: err.message });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Internal server error"; res.status(500).json({ message: msg });
     }
   });
 
@@ -330,8 +330,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const adr = await storage.getAdr(parseInt(req.params.id), parseInt(req.params.projectId));
       if (!adr) return res.status(404).json({ message: "ADR not found" });
       res.json(adr);
-    } catch (err: any) {
-      res.status(500).json({ message: err.message });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Internal server error"; res.status(500).json({ message: msg });
     }
   });
 
@@ -386,8 +386,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       });
 
       res.status(201).json(adr);
-    } catch (err: any) {
-      res.status(500).json({ message: err.message });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Internal server error"; res.status(500).json({ message: msg });
     }
   });
 
@@ -447,8 +447,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       });
 
       res.json(updated);
-    } catch (err: any) {
-      res.status(500).json({ message: err.message });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Internal server error"; res.status(500).json({ message: msg });
     }
   });
 
@@ -512,8 +512,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       );
 
       res.json(updated);
-    } catch (err: any) {
-      res.status(500).json({ message: err.message });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Internal server error"; res.status(500).json({ message: msg });
     }
   });
 
@@ -538,8 +538,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         metadata: { reason: parsed.data.reason },
       });
       res.json(adr);
-    } catch (err: any) {
-      res.status(500).json({ message: err.message });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Internal server error"; res.status(500).json({ message: msg });
     }
   });
 
@@ -547,8 +547,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     try {
       const versions = await storage.getVersions(parseInt(req.params.id));
       res.json(versions);
-    } catch (err: any) {
-      res.status(500).json({ message: err.message });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Internal server error"; res.status(500).json({ message: msg });
     }
   });
 
@@ -560,8 +560,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const [version] = await db.select().from(adrVersions).where(eq(adrVersions.id, versionId));
       if (!version) return res.status(404).json({ message: "Version not found" });
       res.json(version);
-    } catch (err: any) {
-      res.status(500).json({ message: err.message });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Internal server error"; res.status(500).json({ message: msg });
     }
   });
 
@@ -569,8 +569,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     try {
       const comments = await storage.getComments(parseInt(req.params.id));
       res.json(comments);
-    } catch (err: any) {
-      res.status(500).json({ message: err.message });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Internal server error"; res.status(500).json({ message: msg });
     }
   });
 
@@ -589,8 +589,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         parentId: parentId || null,
       });
       res.status(201).json(comment);
-    } catch (err: any) {
-      res.status(500).json({ message: err.message });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Internal server error"; res.status(500).json({ message: msg });
     }
   });
 
@@ -598,8 +598,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     try {
       const relations = await storage.getRelations(parseInt(req.params.id));
       res.json(relations);
-    } catch (err: any) {
-      res.status(500).json({ message: err.message });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Internal server error"; res.status(500).json({ message: msg });
     }
   });
 
@@ -615,8 +615,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         relationType: parsed.data.relationType,
       });
       res.status(201).json(relation);
-    } catch (err: any) {
-      res.status(500).json({ message: err.message });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Internal server error"; res.status(500).json({ message: msg });
     }
   });
 
@@ -670,8 +670,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         });
 
         res.status(201).json(attachment);
-      } catch (err: any) {
-        res.status(500).json({ message: err.message });
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Internal server error"; res.status(500).json({ message: msg });
       }
     }
   );
@@ -687,8 +687,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         }))
       );
       res.json(withUrls);
-    } catch (err: any) {
-      res.status(500).json({ message: err.message });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Internal server error"; res.status(500).json({ message: msg });
     }
   });
 
@@ -703,8 +703,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         }))
       );
       res.json(withUrls);
-    } catch (err: any) {
-      res.status(500).json({ message: err.message });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Internal server error"; res.status(500).json({ message: msg });
     }
   });
 
@@ -726,8 +726,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       });
 
       res.json({ message: "Attachment deleted" });
-    } catch (err: any) {
-      res.status(500).json({ message: err.message });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Internal server error"; res.status(500).json({ message: msg });
     }
   });
 
@@ -738,8 +738,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const projectId = parseInt(req.params.projectId);
       const requirements = await storage.getProjectRequirements(projectId);
       res.json(requirements);
-    } catch (err: any) {
-      res.status(500).json({ message: err.message });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Internal server error"; res.status(500).json({ message: msg });
     }
   });
 
@@ -771,8 +771,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         metadata: { projectId, code: requirement.code, type: requirement.type },
       });
       res.status(201).json(requirement);
-    } catch (err: any) {
-      res.status(500).json({ message: err.message });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Internal server error"; res.status(500).json({ message: msg });
     }
   });
 
@@ -799,8 +799,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         changes: parsed.data,
       });
       res.json(requirement);
-    } catch (err: any) {
-      res.status(500).json({ message: err.message });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Internal server error"; res.status(500).json({ message: msg });
     }
   });
 
@@ -816,8 +816,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         performedBy: req.user!.displayName,
       });
       res.json({ message: "Requirement deleted" });
-    } catch (err: any) {
-      res.status(500).json({ message: err.message });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Internal server error"; res.status(500).json({ message: msg });
     }
   });
 
@@ -833,8 +833,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       }
       const link = await storage.linkAdrToRequirement(adrId, parsed.data.requirementId);
       res.status(201).json(link);
-    } catch (err: any) {
-      res.status(500).json({ message: err.message });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Internal server error"; res.status(500).json({ message: msg });
     }
   });
 
@@ -845,8 +845,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const deleted = await storage.unlinkAdrFromRequirement(adrId, reqId);
       if (!deleted) return res.status(404).json({ message: "Link not found" });
       res.json({ message: "Requirement unlinked" });
-    } catch (err: any) {
-      res.status(500).json({ message: err.message });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Internal server error"; res.status(500).json({ message: msg });
     }
   });
 
@@ -855,8 +855,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const adrId = parseInt(req.params.adrId);
       const requirements = await storage.getAdrRequirements(adrId);
       res.json(requirements);
-    } catch (err: any) {
-      res.status(500).json({ message: err.message });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Internal server error"; res.status(500).json({ message: msg });
     }
   });
 
@@ -866,19 +866,20 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     try {
       const { notifications } = await import("@shared/schema");
       const { eq, desc } = await import("drizzle-orm");
-      const { limit = "50", offset = "0" } = req.query;
-      
+      const rawLimit = Math.min(Math.max(parseInt(String(req.query.limit || "50")), 1), 200);
+      const rawOffset = Math.max(parseInt(String(req.query.offset || "0")), 0);
+
       const userNotifications = await db
         .select()
         .from(notifications)
         .where(eq(notifications.userId, req.user!.id))
         .orderBy(desc(notifications.createdAt))
-        .limit(parseInt(String(limit)))
-        .offset(parseInt(String(offset)));
+        .limit(isNaN(rawLimit) ? 50 : rawLimit)
+        .offset(isNaN(rawOffset) ? 0 : rawOffset);
       
       res.json(userNotifications);
-    } catch (err: any) {
-      res.status(500).json({ message: err.message });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Internal server error"; res.status(500).json({ message: msg });
     }
   });
 
@@ -893,8 +894,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         .where(and(eq(notifications.userId, req.user!.id), eq(notifications.isRead, false)));
       
       res.json({ count: result?.count || 0 });
-    } catch (err: any) {
-      res.status(500).json({ message: err.message });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Internal server error"; res.status(500).json({ message: msg });
     }
   });
 
@@ -912,8 +913,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       
       if (!notification) return res.status(404).json({ message: "Notification not found" });
       res.json(notification);
-    } catch (err: any) {
-      res.status(500).json({ message: err.message });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Internal server error"; res.status(500).json({ message: msg });
     }
   });
 
@@ -928,8 +929,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         .where(and(eq(notifications.userId, req.user!.id), eq(notifications.isRead, false)));
       
       res.json({ message: "All notifications marked as read" });
-    } catch (err: any) {
-      res.status(500).json({ message: err.message });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Internal server error"; res.status(500).json({ message: msg });
     }
   });
 
@@ -946,10 +947,15 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         projectId,
         from,
         to,
-        sort = "newest",
-        limit = "20",
-        offset = "0",
       } = req.query;
+
+      const SORT_ALLOWLIST = ["newest", "oldest", "title"] as const;
+      const rawSort = String(req.query.sort || "newest");
+      const sort = SORT_ALLOWLIST.includes(rawSort as (typeof SORT_ALLOWLIST)[number])
+        ? rawSort
+        : "newest";
+      const limit = Math.min(Math.max(parseInt(String(req.query.limit || "20")), 1), 100);
+      const offset = Math.max(parseInt(String(req.query.offset || "0")), 0);
 
       const { adrs, projects, projectMembers } = await import("@shared/schema");
       const { eq, and, or, ilike, gte, lte, desc, asc, inArray } = await import("drizzle-orm");
@@ -1040,11 +1046,13 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         query = query.orderBy(desc(adrs.updatedAt));
       }
 
-      const results = await query.limit(parseInt(String(limit))).offset(parseInt(String(offset)));
+      const results = await query
+        .limit(isNaN(limit) ? 20 : limit)
+        .offset(isNaN(offset) ? 0 : offset);
 
       res.json(results);
-    } catch (err: any) {
-      res.status(500).json({ message: err.message });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Internal server error"; res.status(500).json({ message: msg });
     }
   });
 
@@ -1055,8 +1063,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const adrId = parseInt(req.params.adrId);
       const diagrams = await storage.getAdrDiagrams(adrId);
       res.json(diagrams);
-    } catch (err: any) {
-      res.status(500).json({ message: err.message });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Internal server error"; res.status(500).json({ message: msg });
     }
   });
 
@@ -1085,8 +1093,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         metadata: { adrId, name: diagram.name },
       });
       res.status(201).json(diagram);
-    } catch (err: any) {
-      res.status(500).json({ message: err.message });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Internal server error"; res.status(500).json({ message: msg });
     }
   });
 
@@ -1110,8 +1118,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         performedBy: req.user!.displayName,
       });
       res.json(diagram);
-    } catch (err: any) {
-      res.status(500).json({ message: err.message });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Internal server error"; res.status(500).json({ message: msg });
     }
   });
 
@@ -1127,8 +1135,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         performedBy: req.user!.displayName,
       });
       res.json({ message: "Diagram deleted" });
-    } catch (err: any) {
-      res.status(500).json({ message: err.message });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Internal server error"; res.status(500).json({ message: msg });
     }
   });
 
@@ -1136,7 +1144,9 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   app.get("/api/audit-logs", requireAuth, requireRole("admin"), async (req, res) => {
     try {
-      const { entityType, action, performedBy, from, to, limit = "50", offset = "0" } = req.query;
+      const { entityType, action, performedBy, from, to } = req.query;
+      const auditLimit = Math.min(Math.max(parseInt(String(req.query.limit || "50")), 1), 200);
+      const auditOffset = Math.max(parseInt(String(req.query.offset || "0")), 0);
       
       const { auditLogs } = await import("@shared/schema");
       const { eq, and, gte, lte, desc } = await import("drizzle-orm");
@@ -1156,12 +1166,12 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       
       const logs = await query
         .orderBy(desc(auditLogs.performedAt))
-        .limit(parseInt(String(limit)))
-        .offset(parseInt(String(offset)));
+        .limit(isNaN(auditLimit) ? 50 : auditLimit)
+        .offset(isNaN(auditOffset) ? 0 : auditOffset);
       
       res.json(logs);
-    } catch (err: any) {
-      res.status(500).json({ message: err.message });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Internal server error"; res.status(500).json({ message: msg });
     }
   });
 
@@ -1171,8 +1181,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     try {
       const allUsers = await storage.getUsers();
       res.json(allUsers.map(({ password, ...u }) => u));
-    } catch (err: any) {
-      res.status(500).json({ message: err.message });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Internal server error"; res.status(500).json({ message: msg });
     }
   });
 
@@ -1205,8 +1215,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       });
       const { password: _, ...safeUser } = user;
       res.status(201).json(safeUser);
-    } catch (err: any) {
-      res.status(500).json({ message: err.message });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Internal server error"; res.status(500).json({ message: msg });
     }
   });
 
@@ -1230,8 +1240,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       });
       const { password: _, ...safeUser } = user;
       res.json(safeUser);
-    } catch (err: any) {
-      res.status(500).json({ message: err.message });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Internal server error"; res.status(500).json({ message: msg });
     }
   });
 
@@ -1250,8 +1260,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         performedBy: req.user!.displayName,
       });
       res.json({ message: "User deleted" });
-    } catch (err: any) {
-      res.status(500).json({ message: err.message });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Internal server error"; res.status(500).json({ message: msg });
     }
   });
 

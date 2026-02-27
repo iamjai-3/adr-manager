@@ -19,7 +19,14 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import { sanitize } from "@/lib/sanitize";
 import type { ProjectMemberWithUser } from "@server/storage";
+
+interface DiagramScene {
+  elements: unknown[];
+  appState?: { viewBackgroundColor?: string };
+  files?: Record<string, unknown> | null;
+}
 
 interface SavedDiagram {
   id: number;
@@ -128,7 +135,7 @@ export default function AdrView() {
   const adrRef = `${projectKey}-${String(adr.adrNumber).padStart(3, "0")}`;
   const latestDiagram = diagrams[0];
 
-  let diagramScene: any = null;
+  let diagramScene: DiagramScene | null = null;
   if (latestDiagram) {
     try {
       diagramScene = JSON.parse(latestDiagram.diagramData);
@@ -251,26 +258,26 @@ export default function AdrView() {
         <div className="space-y-10">
 
           <Section num="1" title="Context">
-            <div className="prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: adr.context }} />
+            <div className="prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: sanitize(adr.context) }} />
           </Section>
 
           <Separator />
 
           <Section num="2" title="Decision">
-            <div className="prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: adr.decision }} />
+            <div className="prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: sanitize(adr.decision) }} />
           </Section>
 
           <Separator />
 
           <Section num="3" title="Consequences">
-            <div className="prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: adr.consequences }} />
+            <div className="prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: sanitize(adr.consequences) }} />
           </Section>
 
           {adr.alternatives && (
             <>
               <Separator />
               <Section num="4" title="Alternatives Considered">
-                <div className="prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: adr.alternatives ?? "" }} />
+                <div className="prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: sanitize(adr.alternatives ?? "") }} />
               </Section>
             </>
           )}

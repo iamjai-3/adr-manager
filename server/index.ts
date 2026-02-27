@@ -1,9 +1,20 @@
 import express, { type Request, Response, NextFunction } from "express";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
-import { createServer } from "http";
+import { createServer } from "node:http";
 import { seedDatabase } from "./seed";
 import { setupAuth } from "./auth";
+import { logger } from "./logger";
+
+// ── Env validation ────────────────────────────────────────────────────────────
+const REQUIRED_ENV = ["DATABASE_URL", "SESSION_SECRET", "MINIO_ENDPOINT", "MINIO_ACCESS_KEY", "MINIO_SECRET_KEY"];
+for (const key of REQUIRED_ENV) {
+  if (!process.env[key]) {
+    throw new Error(`Missing required environment variable: ${key}`);
+  }
+}
 
 const app = express();
 const httpServer = createServer(app);
@@ -14,6 +25,12 @@ declare module "http" {
   }
 }
 
+// ── Security headers ──────────────────────────────────────────────────────────
+// CSP is disabled to avoid blocking Vite HMR and Excalidraw CDN assets in dev.
+// Enable and configure CSP when deploying behind a CDN.
+app.use(helmet({ contentSecurityPolicy: false }));
+
+// ── Body parsing ──────────────────────────────────────────────────────────────
 app.use(
   express.json({
     verify: (req, _res, buf) => {
@@ -21,9 +38,20 @@ app.use(
     },
   }),
 );
-
 app.use(express.urlencoded({ extended: false }));
 
+// ── Auth rate limiting ────────────────────────────────────────────────────────
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "Too many attempts, please try again later." },
+});
+app.use("/api/auth/login", authLimiter);
+app.use("/api/auth/register", authLimiter);
+
+// ── Request logger ────────────────────────────────────────────────────────────
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
     hour: "numeric",
@@ -31,18 +59,17 @@ export function log(message: string, source = "express") {
     second: "2-digit",
     hour12: true,
   });
-
-  console.log(`${formattedTime} [${source}] ${message}`);
+  logger.info(`${formattedTime} [${source}] ${message}`);
 }
 
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
-  let capturedJsonResponse: Record<string, any> | undefined = undefined;
+  let capturedJsonResponse: Record<string, unknown> | undefined = undefined;
 
   const originalResJson = res.json;
   res.json = function (bodyJson, ...args) {
-    capturedJsonResponse = bodyJson;
+    capturedJsonResponse = bodyJson as Record<string, unknown>;
     return originalResJson.apply(res, [bodyJson, ...args]);
   };
 
@@ -53,7 +80,6 @@ app.use((req, res, next) => {
       if (capturedJsonResponse) {
         logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
       }
-
       log(logLine);
     }
   });
@@ -66,11 +92,13 @@ app.use((req, res, next) => {
   setupAuth(app);
   await registerRoutes(httpServer, app);
 
-  app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
+  app.use((err: unknown, _req: Request, res: Response, next: NextFunction) => {
+    const status = (err as { status?: number; statusCode?: number })?.status
+      || (err as { statusCode?: number })?.statusCode
+      || 500;
+    const message = err instanceof Error ? err.message : "Internal Server Error";
 
-    console.error("Internal Server Error:", err);
+    logger.error("Unhandled server error", { status, message: err instanceof Error ? err.stack : String(err) });
 
     if (res.headersSent) {
       return next(err);
@@ -79,9 +107,6 @@ app.use((req, res, next) => {
     return res.status(status).json({ message });
   });
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
   if (process.env.NODE_ENV === "production") {
     serveStatic(app);
   } else {
@@ -89,12 +114,19 @@ app.use((req, res, next) => {
     await setupVite(httpServer, app);
   }
 
-  // ALWAYS serve the app on the port specified in the environment variable PORT
-  // Other ports are firewalled. Default to 5000 if not specified.
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = parseInt(process.env.PORT || "5000", 10);
+  const port = Number.parseInt(process.env.PORT || "5000", 10);
   httpServer.listen(port, "0.0.0.0", () => {
     log(`serving on port ${port}`);
   });
+
+  // ── Graceful shutdown ───────────────────────────────────────────────────────
+  const shutdown = () => {
+    logger.info("Shutting down server...");
+    httpServer.close(() => {
+      logger.info("Server closed.");
+      process.exit(0);
+    });
+  };
+  process.on("SIGTERM", shutdown);
+  process.on("SIGINT", shutdown);
 })();

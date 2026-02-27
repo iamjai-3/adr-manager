@@ -1,13 +1,14 @@
 import { db } from "./db";
 import { auditLogs } from "@shared/schema";
+import { logger } from "./logger";
 
 export interface AuditLogData {
   entityType: string;
   entityId: string | number;
   action: string;
   performedBy: string;
-  changes?: Record<string, { before: any; after: any }>;
-  metadata?: Record<string, any>;
+  changes?: Record<string, { before: unknown; after: unknown }>;
+  metadata?: Record<string, unknown>;
 }
 
 export async function logAudit(data: AuditLogData): Promise<void> {
@@ -21,6 +22,10 @@ export async function logAudit(data: AuditLogData): Promise<void> {
       metadata: data.metadata ? JSON.stringify(data.metadata) : null,
     });
   } catch (err) {
-    console.error("Failed to log audit entry:", err);
+    logger.error("Failed to log audit entry", {
+      message: err instanceof Error ? err.message : String(err),
+      entityType: data.entityType,
+      entityId: data.entityId,
+    });
   }
 }

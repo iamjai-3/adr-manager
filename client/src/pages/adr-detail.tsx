@@ -39,6 +39,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
+import { sanitize } from "@/lib/sanitize";
 
 export default function AdrDetail() {
   const params = useParams<{ projectId: string; id: string }>();
@@ -284,7 +285,7 @@ export default function AdrDetail() {
             <div
               className="prose prose-sm dark:prose-invert max-w-none"
               data-testid="text-context"
-              dangerouslySetInnerHTML={{ __html: adr.context }}
+              dangerouslySetInnerHTML={{ __html: sanitize(adr.context) }}
             />
           </CardContent>
         </Card>
@@ -299,7 +300,7 @@ export default function AdrDetail() {
             <div
               className="prose prose-sm dark:prose-invert max-w-none"
               data-testid="text-decision"
-              dangerouslySetInnerHTML={{ __html: adr.decision }}
+              dangerouslySetInnerHTML={{ __html: sanitize(adr.decision) }}
             />
           </CardContent>
         </Card>
@@ -314,7 +315,7 @@ export default function AdrDetail() {
             <div
               className="prose prose-sm dark:prose-invert max-w-none"
               data-testid="text-consequences"
-              dangerouslySetInnerHTML={{ __html: adr.consequences }}
+              dangerouslySetInnerHTML={{ __html: sanitize(adr.consequences) }}
             />
           </CardContent>
         </Card>
@@ -330,7 +331,7 @@ export default function AdrDetail() {
               <div
                 className="prose prose-sm dark:prose-invert max-w-none"
                 data-testid="text-alternatives"
-                dangerouslySetInnerHTML={{ __html: adr.alternatives }}
+                dangerouslySetInnerHTML={{ __html: sanitize(adr.alternatives ?? "") }}
               />
             </CardContent>
           </Card>
