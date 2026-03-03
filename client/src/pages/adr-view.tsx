@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { sanitize } from "@/lib/sanitize";
-import type { ProjectMemberWithUser } from "@server/storage";
+import type { ProjectMemberWithUser } from "../../../server/storage";
 
 interface DiagramScene {
   elements: unknown[];
@@ -295,11 +295,13 @@ export default function AdrView() {
                   >
                     <Excalidraw
                       initialData={{
-                        elements: diagramScene.elements ?? [],
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        elements: (diagramScene.elements ?? []) as any,
                         appState: {
                           viewBackgroundColor: diagramScene.appState?.viewBackgroundColor ?? "#ffffff",
                         },
-                        files: diagramScene.files ?? null,
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        files: (diagramScene.files ?? undefined) as any,
                       }}
                       viewModeEnabled={true}
                       zenModeEnabled={false}
