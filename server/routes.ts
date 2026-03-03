@@ -16,6 +16,7 @@ import multer from "multer";
 import { v4 as uuidv4 } from "uuid";
 import { fileStorage } from "./file-storage";
 import { getAIProvider, isAIConfigured, parseAIJson } from "./ai/index";
+import { getPrompt } from "./ai/prompts";
 import rateLimit from "express-rate-limit";
 
 // ─── Project-level access middleware ─────────────────────────────────────────
@@ -1329,11 +1330,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
               .join("\n\n")}`
           : "";
 
-      const systemPrompt = `You are an expert software architect specializing in Architecture Decision Records (ADRs).
-Your task is to generate a complete, well-structured ADR draft based on the given title and description.
-Return ONLY valid JSON with exactly these four keys: "context", "decision", "consequences", "alternatives".
-Each value should be rich HTML (using <p>, <ul>, <li>, <strong>, <em> tags only — no headings).
-Be specific, actionable, and professional. Think like a senior architect.${examplesContext}${reqContext}`;
+      const systemPrompt = (await getPrompt("adr-generate-draft")) + examplesContext + reqContext;
 
       const userPrompt = `Generate a complete ADR draft for:
 Title: "${title}"
@@ -1393,18 +1390,7 @@ Return JSON with keys: context, decision, consequences, alternatives.`;
         .innerJoin(projectRequirements, eq(adrRequirementLinks.requirementId, projectRequirements.id))
         .where(eq(adrRequirementLinks.adrId, adrId));
 
-      const systemPrompt = `You are a senior software architect performing a thorough review of an Architecture Decision Record (ADR).
-Evaluate the ADR on completeness, clarity, risk awareness, and architectural soundness.
-Return ONLY valid JSON with this exact structure:
-{
-  "overallScore": <1-10>,
-  "completeness": { "score": <1-10>, "feedback": "<string>" },
-  "clarity": { "score": <1-10>, "feedback": "<string>" },
-  "risks": ["<risk1>", "<risk2>"],
-  "suggestions": ["<actionable suggestion 1>", "<actionable suggestion 2>"],
-  "missingConsiderations": ["<missing item 1>", "<missing item 2>"]
-}
-Be specific and constructive. Reference the ADR content directly in your feedback.`;
+      const systemPrompt = await getPrompt("adr-review-adr");
 
       const relatedParts = relatedAdrTitles.map((a) => `"${a.title}" (${a.status})`).join(", ");
       const relatedContext = relatedAdrTitles.length > 0 ? `\nRelated ADRs: ${relatedParts}` : "";
@@ -1462,20 +1448,7 @@ Alternatives: ${adr.alternatives ?? "Not provided"}${relatedContext}${reqContext
         return res.json({ suggestions: [] });
       }
 
-      const systemPrompt = `You are a senior software architect. Given a list of project requirements (FR/NFR) and existing ADRs, identify architectural decisions that are missing and should be documented.
-Return ONLY valid JSON:
-{
-  "suggestions": [
-    {
-      "title": "<concise ADR title>",
-      "description": "<1-2 sentences describing the decision needed>",
-      "addressesRequirements": ["<req code 1>", "<req code 2>"],
-      "priority": "high|medium|low",
-      "rationale": "<why this ADR is needed>"
-    }
-  ]
-}
-Focus on gaps — don't suggest ADRs that are clearly already covered by existing ones. Return 3-7 suggestions maximum.`;
+      const systemPrompt = await getPrompt("adr-suggest-adrs");
 
       const userPrompt = `Project Requirements:
 ${reqs.map((r) => `[${r.type}-${r.code}] (${r.priority}) ${r.title}: ${r.description ?? ""}`).join("\n")}
@@ -1568,15 +1541,7 @@ Suggest missing architectural decisions.`;
         .map((a) => `ID:${a.id} [${a.projectKey}-${a.adrNumber}] "${a.title}" (${a.status}) — ${stripHtml(a.context)}`)
         .join("\n");
 
-      const systemPrompt = `You are a semantic search engine for Architecture Decision Records (ADRs).
-Given a natural language query and a list of ADRs, rank the most relevant ones.
-Return ONLY valid JSON:
-{
-  "results": [
-    { "adrId": <number>, "score": <0.0-1.0>, "explanation": "<1 sentence why this matches>" }
-  ]
-}
-Return at most 10 results, only those with score >= 0.3, sorted by score descending.`;
+      const systemPrompt = await getPrompt("adr-search");
 
       const userPrompt = `Query: "${query}"
 

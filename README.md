@@ -217,7 +217,26 @@ This creates demo projects, users, and ADRs so you can explore the app immediate
 | `carol` | `password` | Viewer |
 | `viewer` | `password` | Viewer |
 
-### 6. Start the development server
+### 6. (Optional) Start the Elsai Prompt Service
+
+System prompts are managed via [Elsai Prompt Manager](https://promptmanager.elsaifoundry.ai). A small FastAPI service fetches them at runtime. If you skip this step the app falls back to hardcoded prompt defaults automatically.
+
+```bash
+cd prompt-service
+cp .env.example .env   # fill in ELSAI_API_KEY, ELSAI_PROJECT_ID, ELSAI_BASE_URL
+uv sync                # install Python dependencies (requires uv)
+uv run python main.py  # starts on http://localhost:8000
+```
+
+Then set in your root `.env`:
+
+```env
+PROMPT_SERVICE_URL=http://localhost:8000
+```
+
+See [`prompt-service/README.md`](prompt-service/README.md) for full setup details and [`prompt-service/prompts-registry.md`](prompt-service/prompts-registry.md) for the prompt text to register in the Elsai dashboard.
+
+### 7. Start the development server
 
 ```bash
 npm run dev
