@@ -1330,7 +1330,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
               .join("\n\n")}`
           : "";
 
-      const systemPrompt = (await getPrompt("adr-generate-draft")) + examplesContext + reqContext;
+      const systemPrompt = (await getPrompt("generateDraft")) + examplesContext + reqContext;
 
       const userPrompt = `Generate a complete ADR draft for:
 Title: "${title}"
@@ -1390,7 +1390,7 @@ Return JSON with keys: context, decision, consequences, alternatives.`;
         .innerJoin(projectRequirements, eq(adrRequirementLinks.requirementId, projectRequirements.id))
         .where(eq(adrRequirementLinks.adrId, adrId));
 
-      const systemPrompt = await getPrompt("adr-review-adr");
+      const systemPrompt = await getPrompt("reviewAdr");
 
       const relatedParts = relatedAdrTitles.map((a) => `"${a.title}" (${a.status})`).join(", ");
       const relatedContext = relatedAdrTitles.length > 0 ? `\nRelated ADRs: ${relatedParts}` : "";
@@ -1448,7 +1448,7 @@ Alternatives: ${adr.alternatives ?? "Not provided"}${relatedContext}${reqContext
         return res.json({ suggestions: [] });
       }
 
-      const systemPrompt = await getPrompt("adr-suggest-adrs");
+      const systemPrompt = await getPrompt("suggestAdrs");
 
       const userPrompt = `Project Requirements:
 ${reqs.map((r) => `[${r.type}-${r.code}] (${r.priority}) ${r.title}: ${r.description ?? ""}`).join("\n")}
@@ -1541,7 +1541,7 @@ Suggest missing architectural decisions.`;
         .map((a) => `ID:${a.id} [${a.projectKey}-${a.adrNumber}] "${a.title}" (${a.status}) — ${stripHtml(a.context)}`)
         .join("\n");
 
-      const systemPrompt = await getPrompt("adr-search");
+      const systemPrompt = await getPrompt("search");
 
       const userPrompt = `Query: "${query}"
 

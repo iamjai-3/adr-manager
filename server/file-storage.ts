@@ -18,16 +18,20 @@ async function ensureBucket() {
     if (!exists) {
       await minioClient.makeBucket(BUCKET, "us-east-1");
       logger.info(`Created MinIO bucket: ${BUCKET}`);
+    } else {
+      logger.info(`MinIO bucket "${BUCKET}" is ready`);
     }
   } catch (err) {
-    logger.error("Failed to ensure MinIO bucket exists", {
-      message: err instanceof Error ? err.message : String(err),
-      bucket: BUCKET,
-    });
+    const raw = err instanceof Error ? err.message : String(err);
+    const hint =
+      raw.includes("ECONNREFUSED") || raw === ""
+        ? `MinIO is not running at ${process.env.MINIO_ENDPOINT || "localhost"}:${process.env.MINIO_PORT || "9000"} — start it or set MINIO_* env vars. File upload/download features will be unavailable.`
+        : raw;
+    logger.warn(`MinIO unavailable: ${hint}`);
   }
 }
 
-// Initialize bucket on module load
+// Initialize bucket on module load (non-fatal — app runs without MinIO)
 ensureBucket();
 
 export const fileStorage = {

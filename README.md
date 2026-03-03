@@ -219,7 +219,7 @@ This creates demo projects, users, and ADRs so you can explore the app immediate
 
 ### 6. (Optional) Start the Elsai Prompt Service
 
-System prompts are managed via [Elsai Prompt Manager](https://promptmanager.elsaifoundry.ai). A small FastAPI service fetches them at runtime. If you skip this step the app falls back to hardcoded prompt defaults automatically.
+System prompts are managed via [Elsai Prompt Manager](https://promptmanager.elsaifoundry.ai). A small FastAPI service fetches them at runtime. **This service must be running** — `PROMPT_SERVICE_URL` is required and AI features will fail without it.
 
 ```bash
 cd prompt-service

@@ -58,10 +58,10 @@ See [`prompts-registry.md`](./prompts-registry.md) for the exact text of all 4 p
 
 | Prompt Name | Used by |
 |-------------|---------|
-| `adr-generate-draft` | `POST /api/ai/generate-draft` |
-| `adr-review-adr` | `POST /api/ai/review-adr` |
-| `adr-suggest-adrs` | `POST /api/ai/suggest-adrs` |
-| `adr-search` | `POST /api/ai/search` |
+| `generateDraft` | `POST /api/ai/generate-draft` |
+| `reviewAdr` | `POST /api/ai/review-adr` |
+| `suggestAdrs` | `POST /api/ai/suggest-adrs` |
+| `search` | `POST /api/ai/search` |
 
 ## Environment Variables
 

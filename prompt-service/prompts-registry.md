@@ -7,7 +7,7 @@ Project ID: `90204511-23f1-4ac0-a14d-098a3acab0d8`
 
 ---
 
-## 1. `adr-generate-draft`
+## 1. `generateDraft`
 
 Used by: `POST /api/ai/generate-draft`
 
@@ -24,7 +24,7 @@ Be specific, actionable, and professional. Think like a senior architect.
 
 ---
 
-## 2. `adr-review-adr`
+## 2. `reviewAdr`
 
 Used by: `POST /api/ai/review-adr`
 
@@ -45,7 +45,7 @@ Be specific and constructive. Reference the ADR content directly in your feedbac
 
 ---
 
-## 3. `adr-suggest-adrs`
+## 3. `suggestAdrs`
 
 Used by: `POST /api/ai/suggest-adrs`
 
@@ -68,7 +68,7 @@ Focus on gaps — don't suggest ADRs that are clearly already covered by existin
 
 ---
 
-## 4. `adr-search`
+## 4. `search`
 
 Used by: `POST /api/ai/search`
 
